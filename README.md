@@ -79,7 +79,7 @@ AWS details:
   ```
 
 #### Nuxt Default Page
-- **Default Page:** Create `frontend/pages/index.vue`:
+- **Home Page:** Create `frontend/components/HomeContent.vue`
   ```vue
   <script setup>
   const apiBase = useRuntimeConfig().public.apiBase;
@@ -93,11 +93,11 @@ AWS details:
     </div>
   </template>
   ```
-  - update `frontend/app.vue`:
+- edit `frontend/app.vue`:
   ```vue
   <template>
     <div>
-      <NuxtPage />
+      <HomeContent />
     </div>
   </template>
   ```
@@ -118,20 +118,8 @@ AWS details:
     }
   })
   ```
-
-#### CORS Configuration
-- `cd ~/app/backend`
-- `bundle add rack-cors`
-- `bundle install`
-- **Rails CORS:** Edit `backend/config/initializers/cors.rb`:
-  ```ruby
-  Rails.application.config.middleware.insert_before 0, Rack::Cors do
-    allow do
-      origins '*'
-      resource '*', headers: :any, methods: [:get, :post, :options]
-    end
-  end
-  ```
+  `cd ~/app/backend && rails server`
+  `cd ~/app/frontend && npm run dev`
 
 ### 3. Setting Up Testing
 
@@ -152,6 +140,7 @@ AWS details:
     end
   end
   ```
+  `rspec`
 
 #### Vitest Component Test (Frontend)
 - `cd ~/app/frontend`
@@ -217,6 +206,20 @@ AWS details:
   ```
 
 ### 5. Production Deployment
+
+- **Rails CORS:**
+  - `cd ~/app/backend`
+  - `bundle add rack-cors`
+  - `bundle install`
+  -  Edit `backend/config/initializers/cors.rb`:
+  ```ruby
+  Rails.application.config.middleware.insert_before 0, Rack::Cors do
+    allow do
+      origins '*'
+      resource '*', headers: :any, methods: [:get, :post, :options]
+    end
+  end
+  ```
 - **Redeploy:**  
   Once tests pass locally and in CircleCI, deploy the backend and frontend to fly.io.
 - `cd ~/app/backend`
