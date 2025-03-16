@@ -145,18 +145,30 @@ AWS details:
 #### Vitest Component Test (Frontend)
 - `cd ~/app/frontend`
 - `npm i --save-dev vitest @vue/test-utils happy-dom`
-- **Component Test:** Create `tests/component/index.spec.js`:
+- **Component Test:** Create `tests/component/HomeContent.nuxt.js`:
   ```js
-  import { mount } from '@vue/test-utils'
-  import IndexPage from '@/pages/index.vue'
+  import { mountSuspended } from '@nuxt/test-utils/runtime'
+  import { HomeContent } from '#components'
+  import { expect, it, vi } from 'vitest';
 
-  test('renders welcome message', () => {
-    const wrapper = mount(IndexPage, {
-      // Stub dependencies if necessary
-    })
-    expect(wrapper.text()).toContain('Welcome to Our Minimal App!')
+  const mockResponse = {
+    healthStatus: 'OK',
+  };
+
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      json: () => Promise.resolve(mockResponse),
+    }),
+  );
+
+  it('can mount some component', async () => {
+    const component = await mountSuspended(HomeContent)
+    expect(component.text()).toMatchInlineSnapshot(
+      '"Welcome to Our Minimal App!The backend says:"'
+    )
   })
   ```
+  `vitest tests/components`
 
 #### Playwright End-to-End Test
 - `cd ~/app/frontend`
