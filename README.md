@@ -69,9 +69,11 @@ AWS details:
   ```
 - **Routes:** Update `backend/config/routes.rb`:
   ```ruby
-  namespace :api do
-    namespace :v1 do
-      get 'up', to: 'health#show'
+  Rails.application.routes.draw do
+    namespace :api do
+      namespace :v1 do
+        get 'up', to: 'health#show'
+      end
     end
   end
   ```
@@ -90,6 +92,31 @@ AWS details:
       <p>The backend says: {{ JSON.stringify(healthStatus) }}</p>
     </div>
   </template>
+  ```
+  - update `frontend/app.vue`:
+  ```vue
+  <template>
+    <div>
+      <NuxtPage />
+    </div>
+  </template>
+  ```
+  - update `frontend/nuxt.config.ts`:
+  ```
+  const development = process.env.NODE_ENV !== 'production'
+  export default defineNuxtConfig({
+    devServer: { port: 3001 },
+    modules: [
+      '@nuxt/eslint',
+      '@nuxt/fonts',
+      '@nuxt/icon',
+      '@nuxt/image',
+      '@nuxt/test-utils'
+    ],
+    public: {
+      apiBase: development ? 'http://localhost:3000/api/v1' : 'https://app001-backend.fly.dev/api/v1',
+    }
+  })
   ```
 
 #### CORS Configuration
