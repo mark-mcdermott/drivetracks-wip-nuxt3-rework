@@ -183,7 +183,20 @@ AWS details:
     await expect(page.locator('p')).toContainText('"status":"OK"')
   })
   ```
-  `npx playwright test tests/e2e`
+- **Rails CORS:** must be enabled or Playwright will get a 500 error from rails
+  - `cd ~/app/backend`
+  - `bundle add rack-cors`
+  - `bundle install`
+  -  Edit `backend/config/initializers/cors.rb`:
+  ```ruby
+  Rails.application.config.middleware.insert_before 0, Rack::Cors do
+    allow do
+      origins '*'
+      resource '*', headers: :any, methods: [:get, :post, :options]
+    end
+  end
+  ```
+`npx playwright test tests/e2e`
 
 ### 4. CircleCI Integration
 - `cd ~/app`
@@ -220,20 +233,6 @@ AWS details:
 - click `Fastest` -> `main` -> `Set Up Project`
 
 ### 5. Production Deployment
-
-- **Rails CORS:**
-  - `cd ~/app/backend`
-  - `bundle add rack-cors`
-  - `bundle install`
-  -  Edit `backend/config/initializers/cors.rb`:
-  ```ruby
-  Rails.application.config.middleware.insert_before 0, Rack::Cors do
-    allow do
-      origins '*'
-      resource '*', headers: :any, methods: [:get, :post, :options]
-    end
-  end
-  ```
 - **Redeploy:**  
   Once tests pass locally and in CircleCI, deploy the backend and frontend to fly.io.
 - `cd ~/app/backend`
