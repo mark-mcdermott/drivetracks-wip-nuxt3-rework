@@ -207,7 +207,7 @@ AWS details:
     test:
       docker:
         - image: cimg/ruby:3.3      # Backend container
-        - image: node:18            # Frontend container
+        - image: cimg/node:18.17    # Frontend container
           name: node      
         - image: cimg/postgres:15.2 # PostgreSQL container
           name: postgres 
