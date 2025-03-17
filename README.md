@@ -269,15 +269,13 @@ AWS details:
               POSTGRES_HOST: postgres
             command: bundle exec rspec
 
-        # Frontend setup (Runs in Node.js container)
+        # Run frontend steps inside the Node.js container
         - run:
             name: Install Node.js dependencies
             working_directory: frontend
             environment:
               NODE_ENV: test
-            command: |
-              echo "Running npm install inside the Node container"
-              docker exec node npm install
+            command: npm install
 
         # Run Vitest in the frontend folder
         - run:
