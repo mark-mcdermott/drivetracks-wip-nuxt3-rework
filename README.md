@@ -203,23 +203,23 @@ AWS details:
 - **Minimal CircleCI Config:** Create `.circleci/config.yml`:
   ```yaml
   version: 2.1
+
   jobs:
-    test:
+    backend_test:
       docker:
-        - image: cimg/ruby:3.3      # Backend container
-        - image: cimg/node:18.17    # Frontend container
-          name: node      
-        - image: cimg/postgres:15.2 # PostgreSQL container
-          name: postgres 
+        - image: cimg/ruby:3.3
+        - image: cimg/postgres:15.2
+          name: postgres
           environment:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: password
             POSTGRES_DB: backend_test
-            POSTGRES_HOST: postgres # 👈 Forces TCP connection for Rails tests
+            POSTGRES_HOST: postgres
+
       steps:
         - checkout
 
-        # Set up Ruby in the backend folder
+        # Setup Ruby & gems
         - run:
             name: Set up Ruby & Install Gems
             working_directory: backend
@@ -227,7 +227,7 @@ AWS details:
               bundle config set path 'vendor/bundle'
               bundle install
 
-        # Wait for PostgreSQL to be ready
+        # Wait for PostgreSQL
         - run:
             name: Wait for PostgreSQL to be ready
             command: |
@@ -241,8 +241,7 @@ AWS details:
               done
               echo "PostgreSQL did not become ready in time" && exit 1
 
-
-        # Set up database
+        # Setup database
         - run:
             name: Setup Database
             working_directory: backend
@@ -250,40 +249,45 @@ AWS details:
               RAILS_ENV: test
               POSTGRES_HOST: postgres
             command: |
-              echo "Checking PostgreSQL connection..."
-              until PGPASSWORD=password psql -h postgres -U postgres -d postgres -c '\q' 2>/dev/null; do
-                echo "PostgreSQL is still starting up..."
-                sleep 5
-              done
-              echo "PostgreSQL is up and running!"
-              
               bin/rails db:create || echo "Database already exists"
               bin/rails db:migrate
 
-        # Run RSpec tests in the backend folder
+        # Run backend tests
         - run:
             name: Run RSpec tests
             working_directory: backend
-            environment:
-              RAILS_ENV: test
-              POSTGRES_HOST: postgres
             command: bundle exec rspec
 
-        # Run frontend steps inside the Node.js container
+    frontend_test:
+      docker:
+        - image: cimg/node:18.17
+
+      steps:
+        - checkout
+
+        # Check if Node.js & npm are available
+        - run:
+            name: Check Node & NPM Versions
+            working_directory: frontend
+            command: |
+              node -v
+              npm -v
+
+        # Install Node.js dependencies
         - run:
             name: Install Node.js dependencies
             working_directory: frontend
-            environment:
-              NODE_ENV: test
             command: npm install
 
-        # Run Vitest in the frontend folder
+        # Run Vitest
         - run:
             name: Run Vitest
             working_directory: frontend
+            environment:
+              NODE_ENV: test
             command: npm run vitest -- --run
 
-        # Run Playwright in the frontend folder
+        # Run Playwright tests
         - run:
             name: Run Playwright tests
             working_directory: frontend
@@ -293,7 +297,8 @@ AWS details:
     version: 2
     build_and_test:
       jobs:
-        - test
+        - backend_test
+        - frontend_test
   ```
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
 - in `backend/config/database.yml`, change the `default` section to:
