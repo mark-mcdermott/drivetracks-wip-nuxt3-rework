@@ -230,25 +230,42 @@ AWS details:
         - run:
             name: Wait for PostgreSQL to be ready
             command: |
-              for i in {1..10}; do
-                nc -z postgres 5432 && echo "PostgreSQL is ready" && exit 0
+              for i in {1..30}; do
+                if PGPASSWORD=password psql -h postgres -U postgres -d postgres -c '\q' 2>/dev/null; then
+                  echo "PostgreSQL is ready"
+                  exit 0
+                fi
                 echo "Waiting for PostgreSQL..."
-                sleep 3
+                sleep 5
               done
               echo "PostgreSQL did not become ready in time" && exit 1
+
 
         # Set up database
         - run:
             name: Setup Database
             working_directory: backend
+            environment:
+              RAILS_ENV: test
+              POSTGRES_HOST: postgres
             command: |
+              echo "Checking PostgreSQL connection..."
+              until PGPASSWORD=password psql -h postgres -U postgres -d postgres -c '\q' 2>/dev/null; do
+                echo "PostgreSQL is still starting up..."
+                sleep 5
+              done
+              echo "PostgreSQL is up and running!"
+              
               bin/rails db:create || echo "Database already exists"
-              bin/rails db:schema:load
+              bin/rails db:migrate
 
         # Run RSpec tests in the backend folder
         - run:
             name: Run RSpec tests
             working_directory: backend
+            environment:
+              RAILS_ENV: test
+              POSTGRES_HOST: postgres
             command: bundle exec rspec
 
         # Set up Node.js in the frontend folder
@@ -273,10 +290,27 @@ AWS details:
     version: 2
     build_and_test:
       jobs:
-      - test
+        - test
   ```
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
-- in `backend/config/database.yml`, add `host: <%= ENV.fetch("POSTGRES_HOST", "postgres") %>` to the `test` section
+- in `backend/config/database.yml`, change the `default` section to:
+  ```
+  default: &default
+    adapter: postgresql
+    encoding: unicode
+    pool: 5
+    host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
+    username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
+    password: <%= ENV.fetch("POSTGRES_PASSWORD", "password") %>
+  ```
+  and make sure the `test` section looks like this (TODO: it probably looks like this already, if so delete this part of tut):
+  ```
+  test:
+    <<: *default
+    database: backend_test
+    host: <%= ENV.fetch("POSTGRES_HOST", "postgres") %>
+  ```
+- in `backend/spec/rails_helper.rb`, add `ENV['POSTGRES_HOST'] ||= 'postgres'` above `ActiveRecord::Migration.maintain_test_schema!`
 - `echo ".DS_Store\n.secrets" > .gitignore`
 - `git init`
 - `git add .`
