@@ -279,6 +279,12 @@ AWS details:
             working_directory: frontend
             command: npm install
 
+        # Verify vitest is installed
+        - run:
+            name: Verify Vitest Installation
+            working_directory: frontend
+            command: npm list vitest || npm install --save-dev vitest
+
         # Run Vitest
         - run:
             name: Run Vitest
@@ -300,6 +306,7 @@ AWS details:
         - backend_test
         - frontend_test
   ```
+- in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
 - in `backend/config/database.yml`, change the `default` section to:
   ```
