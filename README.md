@@ -296,21 +296,25 @@ AWS details:
         - run:
             name: Start Rails Backend
             working_directory: backend
-            command: bin/rails server -b 0.0.0.0 -p 3000 &
+            command: |
+              bin/rails server -b 0.0.0.0 -p 3000
         
         # Wait for Backend to Start
         - run:
             name: Wait for Backend to be Ready
             command: |
               for i in {1..30}; do
-                if curl -s http://localhost:3000/health; then
-                  echo "Backend is ready!"
-                  exit 0
-                fi
+                curl -s http://localhost:3000/health && echo "Backend is ready!" && exit 0
                 echo "Waiting for backend..."
                 sleep 5
               done
               echo "Backend did not start in time" && exit 1
+        
+        # Debug potential Rails failures
+        - run:
+            name: Debug Rails Logs
+            working_directory: backend
+            command: cat log/test.log || echo "No logs found"
 
         # Check if Node.js & npm are available
         - run:
@@ -355,6 +359,11 @@ AWS details:
   ```
 - in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
+- in `backend/config/environments/test.rb` add:
+  ```
+  # Ensure test env listens on 0.0.0.0
+    config.hosts << "0.0.0.0"
+  ```
 - in `backend/config/database.yml`, change the `default` section to:
   ```
   default: &default
