@@ -134,7 +134,7 @@ AWS details:
 
   RSpec.describe "Health Endpoint", type: :request do
     it "returns OK" do
-      get "/api/v1/up"
+      get "/api/v1/up", headers: { "ACCEPT" => "application/json" }
       expect(response).to have_http_status(:success)
       expect(JSON.parse(response.body)['status']).to eq('OK')
     end
@@ -256,7 +256,7 @@ AWS details:
         - run:
             name: Run RSpec tests
             working_directory: backend
-            command: bundle exec rspec
+            command: bundle exec rspec --format documentation
 
     frontend_test:
       docker:
@@ -297,8 +297,7 @@ AWS details:
             name: Start Rails Backend
             working_directory: backend
             command: |
-              bin/rails server -b 0.0.0.0 -p 3000 > log/test.log 2>&1 &
-              echo "Rails started in the background"
+              bin/rails server -b 0.0.0.0 -p 3000
         
         # Wait for Backend to Start
         - run:
@@ -352,18 +351,26 @@ AWS details:
             command: npx playwright test
 
   workflows:
-    version: 2
     build_and_test:
       jobs:
         - backend_test
-        - frontend_test
+        - frontend_test:
+            requires:
+              - backend_test
   ```
 - in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
 - in `backend/config/environments/test.rb` add:
   ```
-  # Ensure test env listens on 0.0.0.0
-    config.hosts << "0.0.0.0"
+  # Allow all hosts in test environment to avoid 403 errors
+  config.action_dispatch.tld_length = 0
+  config.action_dispatch.hosts = nil
+  ```
+- create `backend/config/initializers/disable_host_auth.rb`
+  ```
+  if Rails.env.test?
+    Rails.application.config.middleware.delete ActionDispatch::HostAuthorization
+  end
   ```
 - in `backend/config/database.yml`, change the `default` section to:
   ```
