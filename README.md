@@ -297,7 +297,8 @@ AWS details:
             name: Start Rails Backend
             working_directory: backend
             command: |
-              bin/rails server -b 0.0.0.0 -p 3000
+              bin/rails server -b 0.0.0.0 -p 3000 > log/test.log 2>&1 &
+              echo "Rails started in the background"
         
         # Wait for Backend to Start
         - run:
