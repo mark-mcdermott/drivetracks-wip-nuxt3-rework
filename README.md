@@ -260,7 +260,7 @@ AWS details:
 
     frontend_test:
       docker:
-        - image: cimg/node:18.17
+        - image: cimg/node:18.20.5
 
       steps:
         - checkout
