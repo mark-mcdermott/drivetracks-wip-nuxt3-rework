@@ -183,13 +183,15 @@ AWS details:
     await expect(page.locator('p')).toContainText('"status":"OK"')
   })
   ```
+  `npx playwright test tests/e2e`
 
 ### 4. CircleCI Integration
 - `cd ~/app`
+- `echo ".DS_Store\n.secrets" > .gitignore`
 - `git init`
 - `git add .`
 - `git commit -m "Init app"`
-- create an empty repo on github and note the git url (something like https://github.com/mark-mcdermott/drivetracks-wip-nuxt3-rework.git)
+- create an empty repo on github and note the git url (something like https://github.com/mark-mcdermott/rails-nuxt-flyio-circleci-mvp-app.git)
 - `git remote add origin <git url>`
 - `git push --set-upstream origin main`
 - go to your CircleCI projects page (something like `https://app.circleci.com/projects/project-dashboard/github/mark-mcdermott/`)
