@@ -207,7 +207,7 @@ AWS details:
     test:
       docker:
         - image: cimg/ruby:3.1  # For backend tests
-        - image: cimg/node:16   # For frontend tests
+        - image: cimg/node:18   # For frontend tests
       steps:
         - checkout
         - run: bundle install --path vendor/bundle
