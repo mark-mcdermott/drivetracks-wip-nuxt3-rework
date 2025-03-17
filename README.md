@@ -187,16 +187,6 @@ AWS details:
 
 ### 4. CircleCI Integration
 - `cd ~/app`
-- `echo ".DS_Store\n.secrets" > .gitignore`
-- `git init`
-- `git add .`
-- `git commit -m "Init app"`
-- create an empty repo on github and note the git url (something like https://github.com/mark-mcdermott/rails-nuxt-flyio-circleci-mvp-app.git)
-- `git remote add origin <git url>`
-- `git push --set-upstream origin main`
-- go to your CircleCI projects page (something like `https://app.circleci.com/projects/project-dashboard/github/mark-mcdermott/`)
-- next to repo name (`drivetracks-wip-nuxt3-rework`), click Set Up Project
-- click `Fastest` -> `main` -> `Set Up Project`
 - **Minimal CircleCI Config:** Create `.circleci/config.yml`:
   ```yaml
   version: 2.1
@@ -218,6 +208,16 @@ AWS details:
       jobs:
         - test
   ```
+- `echo ".DS_Store\n.secrets" > .gitignore`
+- `git init`
+- `git add .`
+- `git commit -m "Init app"`
+- create an empty repo on github and note the git url (something like https://github.com/mark-mcdermott/rails-nuxt-flyio-circleci-mvp-app.git)
+- `git remote add origin <git url>`
+- `git push --set-upstream origin main`
+- go to your CircleCI projects page (something like `https://app.circleci.com/projects/project-dashboard/github/mark-mcdermott/`)
+- next to repo name (`drivetracks-wip-nuxt3-rework`), click Set Up Project
+- click `Fastest` -> `main` -> `Set Up Project`
 
 ### 5. Production Deployment
 
