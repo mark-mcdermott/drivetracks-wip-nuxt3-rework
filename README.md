@@ -260,7 +260,6 @@ AWS details:
 
     frontend_test:
       docker:
-        - image: cimg/node:18.20.5
         - image: cimg/ruby:3.3
         - image: cimg/postgres:15.2
           name: postgres
@@ -278,6 +277,7 @@ AWS details:
             name: Set up Ruby & Install Gems
             working_directory: backend
             command: |
+              gem install bundler
               bundle config set path 'vendor/bundle'
               bundle install
 
