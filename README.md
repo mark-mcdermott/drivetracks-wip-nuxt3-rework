@@ -206,21 +206,77 @@ AWS details:
   jobs:
     test:
       docker:
-        - image: cimg/ruby:3.1  # For backend tests
-        - image: cimg/node:18   # For frontend tests
+        - image: cimg/ruby:3.3      # Backend container
+        - image: node:18            # Frontend container
+        - image: cimg/postgres:15.2 # PostgreSQL container
+          name: postgres 
+          environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: backend_test
+            POSTGRES_HOST: postgres # 👈 Forces TCP connection for Rails tests
       steps:
         - checkout
-        - run: bundle install --path vendor/bundle
-        - run: bundle exec rspec
-        - run: npm install
-        - run: npm run vitest -- --run
-        - run: npx playwright test
+
+        # Set up Ruby in the backend folder
+        - run:
+            name: Set up Ruby & Install Gems
+            working_directory: backend
+            command: |
+              bundle config set path 'vendor/bundle'
+              bundle install
+
+        # Wait for PostgreSQL to be ready
+        - run:
+            name: Wait for PostgreSQL to be ready
+            command: |
+              for i in {1..10}; do
+                nc -z postgres 5432 && echo "PostgreSQL is ready" && exit 0
+                echo "Waiting for PostgreSQL..."
+                sleep 3
+              done
+              echo "PostgreSQL did not become ready in time" && exit 1
+
+        # Set up database
+        - run:
+            name: Setup Database
+            working_directory: backend
+            command: |
+              bin/rails db:create || echo "Database already exists"
+              bin/rails db:schema:load
+
+        # Run RSpec tests in the backend folder
+        - run:
+            name: Run RSpec tests
+            working_directory: backend
+            command: bundle exec rspec
+
+        # Set up Node.js in the frontend folder
+        - run:
+            name: Install Node.js dependencies
+            working_directory: frontend
+            command: npm install
+
+        # Run Vitest in the frontend folder
+        - run:
+            name: Run Vitest
+            working_directory: frontend
+            command: npm run vitest -- --run
+
+        # Run Playwright in the frontend folder
+        - run:
+            name: Run Playwright tests
+            working_directory: frontend
+            command: npx playwright test
+
   workflows:
     version: 2
     build_and_test:
       jobs:
-        - test
+      - test
   ```
+- in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
+- in `backend/config/database.yml`, add `host: <%= ENV.fetch("POSTGRES_HOST", "postgres") %>` to the `test` section
 - `echo ".DS_Store\n.secrets" > .gitignore`
 - `git init`
 - `git add .`
