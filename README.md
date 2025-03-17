@@ -208,6 +208,7 @@ AWS details:
       docker:
         - image: cimg/ruby:3.3      # Backend container
         - image: node:18            # Frontend container
+          name: node      
         - image: cimg/postgres:15.2 # PostgreSQL container
           name: postgres 
           environment:
@@ -268,11 +269,15 @@ AWS details:
               POSTGRES_HOST: postgres
             command: bundle exec rspec
 
-        # Set up Node.js in the frontend folder
+        # Frontend setup (Runs in Node.js container)
         - run:
             name: Install Node.js dependencies
             working_directory: frontend
-            command: npm install
+            environment:
+              NODE_ENV: test
+            command: |
+              echo "Running npm install inside the Node container"
+              docker exec node npm install
 
         # Run Vitest in the frontend folder
         - run:
