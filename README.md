@@ -261,9 +261,56 @@ AWS details:
     frontend_test:
       docker:
         - image: cimg/node:18.20.5
+        - image: cimg/ruby:3.3
+        - image: cimg/postgres:15.2
+          name: postgres
+          environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: backend_test
+            POSTGRES_HOST: postgres
 
       steps:
         - checkout
+
+        # Set up Ruby & Gems (for backend)
+        - run:
+            name: Set up Ruby & Install Gems
+            working_directory: backend
+            command: |
+              bundle config set path 'vendor/bundle'
+              bundle install
+
+        # Setup Database
+        - run:
+            name: Setup Database
+            working_directory: backend
+            environment:
+              RAILS_ENV: test
+              POSTGRES_HOST: postgres
+            command: |
+              bin/rails db:create || echo "Database already exists"
+              bin/rails db:migrate
+
+        # Start Backend
+        - run:
+            name: Start Rails Backend
+            working_directory: backend
+            command: bin/rails server -b 0.0.0.0 -p 3000 &
+        
+        # Wait for Backend to Start
+        - run:
+            name: Wait for Backend to be Ready
+            command: |
+              for i in {1..30}; do
+                if curl -s http://localhost:3000/health; then
+                  echo "Backend is ready!"
+                  exit 0
+                fi
+                echo "Waiting for backend..."
+                sleep 5
+              done
+              echo "Backend did not start in time" && exit 1
 
         # Check if Node.js & npm are available
         - run:
