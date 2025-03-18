@@ -292,12 +292,20 @@ AWS details:
               bin/rails db:create || echo "Database already exists"
               bin/rails db:migrate
 
+        - run:
+            name: Check Port 3000 Usage
+            command: |
+              netstat -tulnp | grep :3000 || echo "Port 3000 is free"
+
         # Start Backend
         - run:
-            name: Start Rails Backend
-            working_directory: backend
-            command: |
-              bin/rails server -b 0.0.0.0 -p 3000
+          name: Start Rails Backend
+          working_directory: backend
+          environment:
+            RAILS_ENV: test
+          command: |
+            bin/rails server -b 0.0.0.0 -p 3000 > log/test.log 2>&1 &
+            echo "Rails started in the background"
         
         # Wait for Backend to Start
         - run:
@@ -310,6 +318,14 @@ AWS details:
               done
               echo "Backend did not start in time" && exit 1
         
+        # Log check, if rails crashes
+        - run:
+            name: Debug Rails Logs
+            working_directory: backend
+            command: |
+              echo "=== Debugging Rails Logs ==="
+              cat log/test.log || echo "No logs found"
+
         # Debug potential Rails failures
         - run:
             name: Debug Rails Logs
