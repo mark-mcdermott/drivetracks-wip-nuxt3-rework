@@ -103,7 +103,8 @@ AWS details:
   ```
   - update `frontend/nuxt.config.ts`:
   ```
-  const development = process.env.NODE_ENV !== 'production'
+  const development = process.env.NODE_ENV !== 'production';
+
   export default defineNuxtConfig({
     devServer: { port: 3001 },
     modules: [
@@ -118,7 +119,7 @@ AWS details:
         apiBase: development ? 'http://localhost:3000/api/v1' : 'https://app001-backend.fly.dev/api/v1'
       }
     }
-  })
+  });
   ```
   `cd ~/app/backend && rails server`
   `cd ~/app/frontend && npm run dev`
