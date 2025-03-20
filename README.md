@@ -113,8 +113,10 @@ AWS details:
       '@nuxt/image',
       '@nuxt/test-utils'
     ],
-    public: {
-      apiBase: development ? 'http://localhost:3000/api/v1' : 'https://app001-backend.fly.dev/api/v1',
+    runtimeConfig: {
+      public: {
+        apiBase: development ? 'http://localhost:3000/api/v1' : 'https://app001-backend.fly.dev/api/v1'
+      }
     }
   })
   ```
@@ -299,13 +301,14 @@ AWS details:
 
         # Start Backend
         - run:
-            name: Start Rails Backend
             working_directory: backend
             environment:
               RAILS_ENV: test
             command: |
               bin/rails server -b 0.0.0.0 -p 3000 > log/test.log 2>&1 &
-              echo "Rails started in the background"
+              sleep 5  # Give Rails time to write to the log
+              echo "=== Debugging Rails Logs ==="
+              cat log/test.log || echo "No logs found"
         
         # Wait for Backend to Start
         - run:
