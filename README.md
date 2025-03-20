@@ -148,7 +148,7 @@ AWS details:
 #### Vitest Component Test (Frontend)
 - `cd ~/app/frontend`
 - `npm i --save-dev vitest @vue/test-utils happy-dom`
-- **Component Test:** Create `tests/component/HomeContent.nuxt.js`:
+- **Component Test:** Create `tests/components/HomeContent.nuxt.js`:
   ```js
   import { mountSuspended } from '@nuxt/test-utils/runtime'
   import { HomeContent } from '#components'
