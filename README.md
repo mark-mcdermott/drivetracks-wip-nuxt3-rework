@@ -101,7 +101,7 @@ AWS details:
     </div>
   </template>
   ```
-  - update `frontend/nuxt.config.ts`:
+- update `frontend/nuxt.config.ts`:
   ```
   const development = process.env.NODE_ENV !== 'production';
 
