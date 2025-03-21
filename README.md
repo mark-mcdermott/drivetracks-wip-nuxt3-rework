@@ -211,7 +211,9 @@ AWS details:
     await expect(page.locator('p')).toContainText('"status":"OK"')
   })
   ```
-`npx playwright test tests/e2e`
+- `cd ~/app/backend && rails server`
+- `cd ~/app/frontend && npm run dev`
+- `npx playwright test tests/e2e`
 
 ### 4. CircleCI Integration
 - `cd ~/app`
