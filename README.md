@@ -121,21 +121,21 @@ AWS details:
     }
   });
   ```
-  - **Rails CORS:** must be enabled or Playwright will get a 500 error from rails
-    - `cd ~/app/backend`
-    - `bundle add rack-cors`
-    - `bundle install`
-    -  Edit `backend/config/initializers/cors.rb`:
-    ```ruby
-    Rails.application.config.middleware.insert_before 0, Rack::Cors do
-      allow do
-        origins '*'
-        resource '*', headers: :any, methods: [:get, :post, :options]
-      end
+- **Rails CORS:** must be enabled or Playwright will get a 500 error from rails
+  - `cd ~/app/backend`
+  - `bundle add rack-cors`
+  - `bundle install`
+  -  Edit `backend/config/initializers/cors.rb`:
+  ```ruby
+  Rails.application.config.middleware.insert_before 0, Rack::Cors do
+    allow do
+      origins '*'
+      resource '*', headers: :any, methods: [:get, :post, :options]
     end
-    ```
-  `cd ~/app/backend && rails server`
-  `cd ~/app/frontend && npm run dev`
+  end
+  ```
+- `cd ~/app/backend && rails server`
+- `cd ~/app/frontend && npm run dev`
 
 ### 3. Setting Up Testing
 
