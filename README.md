@@ -121,6 +121,19 @@ AWS details:
     }
   });
   ```
+  - **Rails CORS:** must be enabled or Playwright will get a 500 error from rails
+    - `cd ~/app/backend`
+    - `bundle add rack-cors`
+    - `bundle install`
+    -  Edit `backend/config/initializers/cors.rb`:
+    ```ruby
+    Rails.application.config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        origins '*'
+        resource '*', headers: :any, methods: [:get, :post, :options]
+      end
+    end
+    ```
   `cd ~/app/backend && rails server`
   `cd ~/app/frontend && npm run dev`
 
@@ -190,19 +203,6 @@ AWS details:
     await page.goto('http://localhost:3001')
     await expect(page.locator('p')).toContainText('"status":"OK"')
   })
-  ```
-- **Rails CORS:** must be enabled or Playwright will get a 500 error from rails
-  - `cd ~/app/backend`
-  - `bundle add rack-cors`
-  - `bundle install`
-  -  Edit `backend/config/initializers/cors.rb`:
-  ```ruby
-  Rails.application.config.middleware.insert_before 0, Rack::Cors do
-    allow do
-      origins '*'
-      resource '*', headers: :any, methods: [:get, :post, :options]
-    end
-  end
   ```
 `npx playwright test tests/e2e`
 
