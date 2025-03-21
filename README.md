@@ -2,7 +2,9 @@
 
 ## Overview
 
-In this tutorial, you'll build a lean Rails API (backend) and a Nuxt 3 app (frontend), both hosted on fly.io.
+In this tutorial, you'll build a lean Rails API (backend) and a Nuxt 3 app (frontend), both hosted on fly.io. There will be RSpec, Vitest and Playwright tests, which will run locally and on CircleCI.
+
+## Part I: Barebones App With CircleCI Tests On Fly.io
 
 ### 1. Initial Setup
 - `cd ~`
@@ -533,15 +535,282 @@ AWS details:
 - **Verification:**  
   Visit the frontend prod URL to verify that the page displays the `{ "status": "OK" }` response from the backend.
 
-### 6. Incremental Authentication Setup (TODO: fill in this part!)
-- **Add Sidebase Nuxt Auth (Frontend):**  
-  Run `nuxi module add @sidebase/nuxt-auth` and configure it in your `nuxt.config.ts` so that pages are protected by default (except for public pages).
-- **Add Devise with JWT (Backend):**  
-  - Install `devise` and `devise-jwt`.
-  - Generate the necessary controllers for sessions and registrations.
-  - Write tests to verify login, logout, and current_user endpoints.
-- **Test Incrementally:**  
-  Validate each new authentication feature locally and in CircleCI before moving on.
+## Part II: Auth
+
+### 1. **Install and Configure Devise with JWT and Sidebase Auth**
+- **Install Dependencies**
+- `cd ~/app/backend`
+- `rails db:create` (or `rails db:drop db:create` if already exists)
+- `bundle add devise devise-jwt jsonapi-serializer`
+- `bundle install`
+- `rails generate devise:install`
+
+- **Devise Configuration**
+- In config/environments/development.rb:
+  ```
+  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+  ```
+- In `config/initializers/devise.rb`, uncomment and change the line:
+  ```
+  config.navigational_formats = []
+  ```
+- In `config/application.rb`, add session store and middleware:
+  ```
+  config.session_store :cookie_store, key: '_interslice_session'
+  config.middleware.use ActionDispatch::Cookies
+  config.middleware.use config.session_store, config.session_options
+  ```
+
+  **Test**
+- Verify if Devise is working by checking if the views are generated:
+  ```
+  rails generate devise:views
+  ```
+
+### 2. **Create User Model with Devise & JWT**
+- `rails g migration EnableUuid`
+- In db/migrate/<timestamp>_enable_uuuid.rb:
+  ```
+  enable_extension 'pgcrypto'
+  ```
+- `rails db:migrate`
+- Generate User model with Devise:
+  ```
+  rails generate devise User
+  ```
+- In `db/migrate/<timestamp>_devise_create_users.rb`, update:
+  ```
+  t.boolean :admin, default: false
+  t.uuid :uuid, index: { unique: true }
+  ```
+- `rails db:migrate`
+- Factory for User Model:
+  ```
+  touch spec/factories/users.rb
+  ```
+- In spec/factories/users.rb:
+  ```
+  FactoryBot.define do
+    factory :user do
+      sequence(:email) { |n| "test#{n}@mail.com" }
+      password { 'password' }
+      trait :confirmed do
+        confirmed_at { Time.zone.now }
+      end
+    end
+  end
+  ```
+
+  **Test**
+- Test if users can be created:
+  ```
+  rails console
+  FactoryBot.create(:user)
+  ```
+
+
+### 3. **Create Registration and Login Endpoints**
+- Generate Controllers:
+  ```
+  rails g devise:controllers api/v1/auth -c sessions registrations
+  ```
+- In config/routes.rb:
+  ```
+  devise_for :users, path: '', path_names: {
+    sign_in: 'api/v1/auth/login',
+    sign_out: 'api/v1/auth/logout',
+    registration: 'api/v1/auth/signup'
+  }, controllers: {
+    sessions: 'api/v1/auth/sessions',
+    registrations: 'api/v1/auth/registrations'
+  }
+  ```
+
+  **Test**
+- Ensure routes for login, logout, and signup are working:
+  ```
+  rails routes | grep auth
+  ```
+
+### 4. **JWT Configuration**
+- JWT Setup in devise.rb (initializers/devise.rb):
+  ```
+  config.jwt do |jwt|
+    jwt.secret = ENV['SECRET_KEY_BASE'] || 'dummy_secret_key_for_tests'
+    jwt.dispatch_requests = [
+      ['POST', %r{^/api/v1/auth/login$}]
+    ]
+    jwt.revocation_requests = [
+      ['DELETE', %r{^/api/v1/auth/logout$}]
+    ]
+    jwt.expiration_time = 30.minutes.to_i
+  end
+  ```
+- Migration to Add JWT Field:
+  ```
+  rails g migration addJtiToUsers jti:string:index:unique
+  ```
+- In `db/migrate/<timestamp>_add_jti_to_users.rb`:
+  ```
+  add_column :users, :jti, :string, null: false
+  add_index :users, :jti, unique: true
+  ```
+- `rails db:migrate`
+
+- **User Model with JWT**
+- In app/models/user.rb:
+  ```
+  class User < ApplicationRecord
+    include Devise::JWT::RevocationStrategies::JTIMatcher
+    devise :database_authenticatable, :registerable,
+          :recoverable, :rememberable, :validatable,
+          :jwt_authenticatable, jwt_revocation_strategy: self
+    before_create :set_uuid
+
+    private
+
+    def set_uuid
+      self.uuid = SecureRandom.uuid if uuid.blank?
+    end
+  end
+  ```
+
+**Test**
+- Check if users have a jti field:
+  ```
+  rails console
+  user = User.find_by(email: "test@mail.com")
+  puts user.jti
+  ```
+
+### 5. **Session Controller for Login**
+- Create Sessions Controller:
+  - In `app/controllers/api/v1/auth/sessions_controller.rb`:
+  ```
+  class Api::V1::Auth::SessionsController < ApplicationController
+    def create
+      user = User.find_by(email: params[:user][:email])
+      if user&.valid_password?(params[:user][:password])
+        token = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil).first
+        render json: { token: token, status: { code: 200, message: 'Logged in successfully.' } }
+      else
+        render json: { status: 401, message: 'Invalid email or password.' }, status: :unauthorized
+      end
+    end
+  end
+  ```
+
+**Test**
+- Test login endpoint with `curl` by posting the user credentials.
+
+### 6. **Registration Controller**
+- Create Registration Controller:
+  - In `app/controllers/api/v1/auth/registrations_controller.rb`:
+  ```
+  class Api::V1::Auth::RegistrationsController < Devise::RegistrationsController
+    respond_to :json
+
+    def create
+      user = User.new(user_params)
+      if user.save
+        render json: { status: { code: 200, message: "Signed up successfully." }, data: UserSerializer.new(user).serializable_hash[:data][:attributes] }
+      else
+        render json: { status: 422, message: user.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      end
+    end
+
+    private
+
+    def user_params
+      params.require(:user).permit(:email, :password)
+    end
+  end
+  ```
+
+**Test**
+- Test the registration with `curl` by sending POST requests with valid user data.
+
+### 7. **Current User Endpoint**
+- Create Current User Controller:
+  - In `app/controllers/api/v1/auth/current_user_controller.rb`:
+  ```
+  class Api::V1::Auth::CurrentUserController < ApplicationController
+    before_action :authenticate_user!
+
+    def index
+      render json: UserSerializer.new(current_user).serializable_hash[:data][:attributes], status: :ok
+    end
+  end
+  ```
+
+**Test**
+- Test the current user endpoint by sending a `GET` request with a valid token.
+
+### 8. **User Seeds and Production Deployment**
+- User Seeding:
+  - In db/seeds.rb:
+  ```
+  User.create!(email: 'test@mail.com', password: 'password', admin: true)
+  User.create!(email: 'test2@mail.com', password: 'password')
+  ```
+
+**Test**
+- Test seeding in production by running `rails db:seed`.
+
+**Deploy Backend to Fly.io**
+- `cd ~/app/backend`
+- `fly deploy`
+
+### 9. Frontend Updates
+Nuxt Configuration for API Calls:
+In nuxt.config.ts, update to use the correct backend URL:
+
+typescript
+Copy
+runtimeConfig: { 
+  public: { 
+    apiBase: process.env.API_BASE || '<backend url>/api/v1' 
+  }
+}
+Test:
+Verify that the frontend is correctly calling the backend endpoints and handles JWT authentication.
+10. Swagger API Documentation
+Install Swagger:
+bash
+Copy
+cd ~/app/backend
+bundle add rswag
+bundle install
+rails g rswag:install
+Generate swagger for controllers:
+
+bash
+Copy
+rails generate rspec:swagger Api::V1::Auth::CurrentUserController
+rails generate rspec:swagger Api::V1::Auth::RegistrationsController
+rails generate rspec:swagger Api::V1::Auth::SessionsController
+rails generate rspec:swagger Api::V1::UsersController
+Run to generate docs:
+
+bash
+Copy
+rake rswag:specs:swaggerize
+rails s
+In a browser, go to http://localhost:3000/api-docs to view the API docs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Final Thoughts
 
