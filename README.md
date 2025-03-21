@@ -496,6 +496,14 @@ AWS details:
 - go to your CircleCI projects page (something like `https://app.circleci.com/projects/project-dashboard/github/mark-mcdermott/`)
 - next to repo name (`drivetracks-wip-nuxt3-rework`), click Set Up Project
 - click `Fastest` -> `main` -> `Set Up Project`
+- CI frontend/backend tests should pass 🎉
+
+- **Double Check Local Tests Stil Pass:** 
+- `cd ~/app/backend && rspec` <-- TODO: Fix the local db connection, it's broken now and rspec won't run!
+- `cd ~/app/frontend && vitest tests/components` <-- vitest tests should pass locally 🎉
+- `cd ~/app/backend && rails server`
+- `cd ~/app/frontend && npm run dev`
+- `cd ~/app/frontend && npx playwright test tests/e2e` <-- playwright tests should pass locally 🎉
 
 ### 5. Production Deployment
 - **Redeploy:**  
@@ -506,9 +514,9 @@ AWS details:
 - `fly deploy`
 
 - **Verification:**  
-  Visit the frontend URL to verify that the page displays the `{ "status": "OK" }` response from the backend.
+  Visit the frontend prod URL to verify that the page displays the `{ "status": "OK" }` response from the backend.
 
-### 6. Incremental Authentication Setup
+### 6. Incremental Authentication Setup (TODO: fill in this part!)
 - **Add Sidebase Nuxt Auth (Frontend):**  
   Run `nuxi module add @sidebase/nuxt-auth` and configure it in your `nuxt.config.ts` so that pages are protected by default (except for public pages).
 - **Add Devise with JWT (Backend):**  
@@ -518,44 +526,8 @@ AWS details:
 - **Test Incrementally:**  
   Validate each new authentication feature locally and in CircleCI before moving on.
 
-### 7. Environment Variables & Simplified Configurations
-- **Using .env Files:**  
-  Utilize `dotenv` to load environment variables in both frontend and backend. For example, in your Nuxt config:
-  ```js
-  import dotenv from 'dotenv'
-  dotenv.config()
-
-  export default defineNuxtConfig({
-    runtimeConfig: {
-      public: {
-        apiBase: process.env.API_BASE || 'http://localhost:3000/api/v1'
-      }
-    }
-  })
-  ```
-- **Simplify Docker/Compose:**  
-  Create a minimal `docker-compose.yml` for production and CI:
-  ```yaml
-  version: '3'
-  services:
-    backend:
-      build: ./backend
-      environment:
-        - RAILS_ENV=production
-        - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-      ports:
-        - "3000:3000"
-    frontend:
-      build: ./frontend
-      environment:
-        - NODE_ENV=production
-        - API_BASE=${API_BASE}
-      ports:
-        - "3001:3000"
-  ```
-
 ## Final Thoughts
 
-Build your app like a workout: one exercise at a time. Verify each step with tests and CI before moving on to the next feature. This method ensures you stay strong and never overwhelmed. Happy coding—and remember, you're building something amazing one rep at a time!
+I hope you've enjoyed this tutorial and gotten everything working. If anything didn't work for you 
 
 *(End of Tutorial)*
