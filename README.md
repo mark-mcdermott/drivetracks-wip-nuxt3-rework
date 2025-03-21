@@ -137,6 +137,13 @@ AWS details:
 - `cd ~/app/backend && rails server`
 - `cd ~/app/frontend && npm run dev`
 
+- before redeploying, we want to change fly.io's health check endpoint, to our health check endpoint or we'll get a 503 when we hit the frontend. In `backend/fly.toml`, (which fly.io created for us when we did `fly launch`) change the `path = '/up'` line in the `[[http_service.checks]]` section to:
+  ```
+  path = '/api/v1/up'
+  ```
+- `cd ~/app/backend && fly deploy`
+- `cd ~/app/frontend && fly deploy`
+
 ### 3. Setting Up Testing
 
 #### RSpec Test (Backend)
@@ -358,7 +365,7 @@ AWS details:
 
   FROM ruby:${RUBY_VERSION}-slim
 
-  # 👇 Re-declare ARG before setting ENV
+  # Re-declare ARG before setting ENV
   ARG BUNDLER_VERSION
   ENV BUNDLER_VERSION=${BUNDLER_VERSION}
 
