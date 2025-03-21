@@ -446,7 +446,20 @@ AWS details:
   # Build Nuxt app
   RUN npm run build
   ```
-- in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
+- `bundle add dotenv-rails --group "development, test"`
+- `bundle install`
+- create `backend/.env`:
+  ```
+  POSTGRES_HOST=localhost
+  POSTGRES_USER=postgres
+  POSTGRES_PASSWORD=password
+  POSTGRES_DB=backend_test
+  RAILS_ENV=test
+  ```
+- at the top of `backend/spec/rails_helper.rb`, add this:
+  ```
+  require 'dotenv/load'
+  ```
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3"`
 - in `backend/config/database.yml`, change the `test` section to:
   ```
@@ -459,6 +472,7 @@ AWS details:
     port: 5432
   ```
 - in `backend/spec/rails_helper.rb`, add `ENV['POSTGRES_HOST'] ||= 'postgres'` right below `ENV['RAILS_ENV'] ||= 'test'`
+- in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
 - edit your `frontend/nuxt.config.ts` to this:
   ```
   const isCI = process.env.CI === 'true'
@@ -486,7 +500,7 @@ AWS details:
     },
   });
   ```
-- `echo ".DS_Store\n.secrets" > .gitignore`
+- `echo ".DS_Store\n.secrets\n.env" > .gitignore`
 - `git init`
 - `git add .`
 - `git commit -m "Init app"`
