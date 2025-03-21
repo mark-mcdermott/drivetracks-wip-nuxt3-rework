@@ -147,9 +147,14 @@ AWS details:
 
 #### Vitest Component Test (Frontend)
 - `cd ~/app/frontend`
-- `npm i --save-dev vitest @vue/test-utils happy-dom`
-- **Component Test:** Create `tests/components/HomeContent.nuxt.js`:
-  ```js
+- `npm i --save-dev @nuxt/test-utils vitest @vue/test-utils happy-dom playwright-core`
+- create `frontend/vitest.config.ts`
+  ```
+  import { defineVitestConfig } from '@nuxt/test-utils/config'
+  export default defineVitestConfig({ })
+  ```
+- **Component Test:** Create `tests/components/HomeContent.nuxt.spec.ts`:
+  ```ts
   import { mountSuspended } from '@nuxt/test-utils/runtime'
   import { HomeContent } from '#components'
   import { expect, it, vi } from 'vitest';
