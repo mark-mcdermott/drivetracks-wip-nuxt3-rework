@@ -762,44 +762,44 @@ AWS details:
 - `fly deploy`
 
 ### 9. Frontend Updates
-Nuxt Configuration for API Calls:
-In nuxt.config.ts, update to use the correct backend URL:
+- Nuxt Configuration for API Calls:
+  - In nuxt.config.ts, update to use the correct backend URL:
+  ```
+  runtimeConfig: { 
+    public: { 
+      apiBase: process.env.API_BASE || '<backend url>/api/v1' 
+    }
+  }  
+  ```
 
-typescript
-Copy
-runtimeConfig: { 
-  public: { 
-    apiBase: process.env.API_BASE || '<backend url>/api/v1' 
-  }
-}
-Test:
-Verify that the frontend is correctly calling the backend endpoints and handles JWT authentication.
-10. Swagger API Documentation
-Install Swagger:
-bash
-Copy
-cd ~/app/backend
-bundle add rswag
-bundle install
-rails g rswag:install
-Generate swagger for controllers:
+**Test**
+- Verify that the frontend is correctly calling the backend endpoints and handles JWT authentication.
 
-bash
-Copy
-rails generate rspec:swagger Api::V1::Auth::CurrentUserController
-rails generate rspec:swagger Api::V1::Auth::RegistrationsController
-rails generate rspec:swagger Api::V1::Auth::SessionsController
-rails generate rspec:swagger Api::V1::UsersController
-Run to generate docs:
+### 10. Swagger API Documentation
+- Install Swagger:
+  ```
+  cd ~/app/backend
+  bundle add rswag
+  bundle install
+  rails g rswag:install
+  ```
+- Generate swagger for controllers:
+  ```
+  rails generate rspec:swagger Api::V1::Auth::CurrentUserController
+  rails generate rspec:swagger Api::V1::Auth::RegistrationsController
+  rails generate rspec:swagger Api::V1::Auth::SessionsController
+  rails generate rspec:swagger Api::V1::UsersController
+  ```
+- Run to generate docs:
+  ```
+  rake rswag:specs:swaggerize
+  rails s
+  ```
+- In a browser, go to http://localhost:3000/api-docs to view the API docs.
 
-bash
-Copy
-rake rswag:specs:swaggerize
-rails s
-In a browser, go to http://localhost:3000/api-docs to view the API docs.
-
-
-
+**Test**
+- Test Local: Ensure all parts are working by testing locally (curl, Postman, etc.).
+- Test on CircleCI: Check CircleCI integration for backend and frontend tests.
 
 
 
