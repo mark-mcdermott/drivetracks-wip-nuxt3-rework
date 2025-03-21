@@ -460,6 +460,10 @@ AWS details:
   ```
   require 'dotenv/load'
   ```
+- also in `backend/spec/rails_helper.rb` right below `ENV['RAILS_ENV'] ||= 'test'`, add this:
+```
+`ENV['POSTGRES_HOST'] ||= 'postgres'`
+```
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3"`
 - in `backend/config/database.yml`, change the `test` section to:
   ```
@@ -471,7 +475,6 @@ AWS details:
     password: <%= ENV.fetch("POSTGRES_PASSWORD", "password") %>
     port: 5432
   ```
-- in `backend/spec/rails_helper.rb`, add `ENV['POSTGRES_HOST'] ||= 'postgres'` right below `ENV['RAILS_ENV'] ||= 'test'`
 - in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
 - edit your `frontend/nuxt.config.ts` to this:
   ```
