@@ -438,37 +438,45 @@ AWS details:
   RUN npm run build
   ```
 - in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
-- in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
-- in `backend/config/environments/test.rb` add:
-  ```
-  # Allow all hosts in test environment to avoid 403 errors
-  config.action_dispatch.tld_length = 0
-  config.action_dispatch.hosts = nil
-  ```
-- create `backend/config/initializers/disable_host_auth.rb`
-  ```
-  if Rails.env.test?
-    Rails.application.config.middleware.delete ActionDispatch::HostAuthorization
-  end
-  ```
-- in `backend/config/database.yml`, change the `default` section to:
-  ```
-  default: &default
-    adapter: postgresql
-    encoding: unicode
-    pool: 5
-    host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
-    username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
-    password: <%= ENV.fetch("POSTGRES_PASSWORD", "password") %>
-  ```
-  and make sure the `test` section looks like this (TODO: it probably looks like this already, if so delete this part of tut):
+- in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3"`
+- in `backend/config/database.yml`, change the `test` section to:
   ```
   test:
     <<: *default
     database: backend_test
     host: <%= ENV.fetch("POSTGRES_HOST", "postgres") %>
+    username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
+    password: <%= ENV.fetch("POSTGRES_PASSWORD", "password") %>
+    port: 5432
   ```
-- in `backend/spec/rails_helper.rb`, add `ENV['POSTGRES_HOST'] ||= 'postgres'` above `ActiveRecord::Migration.maintain_test_schema!`
+- in `backend/spec/rails_helper.rb`, add `ENV['POSTGRES_HOST'] ||= 'postgres'` right below `ENV['RAILS_ENV'] ||= 'test'`
+- edit your `frontend/nuxt.config.ts` to this:
+  ```
+  const isCI = process.env.CI === 'true'
+  const isDev = process.env.NODE_ENV !== 'production'
+
+  export default defineNuxtConfig({
+    devServer: { port: 3001 },
+
+    modules: [
+      '@nuxt/eslint',
+      '@nuxt/fonts',
+      '@nuxt/icon',
+      '@nuxt/image',
+      '@nuxt/test-utils'
+    ],
+
+    runtimeConfig: {
+      public: {
+        apiBase: isCI
+          ? 'http://backend:3000/api/v1'
+          : isDev
+            ? 'http://localhost:3000/api/v1'
+            : 'https://app001-backend.fly.dev/api/v1'
+      }
+    },
+  });
+  ```
 - `echo ".DS_Store\n.secrets" > .gitignore`
 - `git init`
 - `git add .`
