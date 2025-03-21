@@ -208,180 +208,234 @@ AWS details:
 
 ### 4. CircleCI Integration
 - `cd ~/app`
-- **Minimal CircleCI Config:** Create `.circleci/config.yml`:
-  ```yaml
+- create `.circleci/config.yml`:
+  ```
   version: 2.1
 
-  jobs:
-    backend_test:
+  executors:
+    docker-executor:
       docker:
-        - image: cimg/ruby:3.3
-        - image: cimg/postgres:15.2
-          name: postgres
-          environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: password
-            POSTGRES_DB: backend_test
-            POSTGRES_HOST: postgres
+        - image: cimg/base:stable
+      working_directory: ~/app
 
+  jobs:
+    test:
+      executor: docker-executor
       steps:
         - checkout
 
-        # Setup Ruby & gems
-        - run:
-            name: Set up Ruby & Install Gems
-            working_directory: backend
-            command: |
-              bundle config set path 'vendor/bundle'
-              bundle install
+        - setup_remote_docker:
+            docker_layer_caching: true
 
-        # Wait for PostgreSQL
         - run:
-            name: Wait for PostgreSQL to be ready
+            name: Install Bundler 2.6.5
+            command: |
+              docker-compose -f docker-compose.ci.yml build --build-arg BUNDLER_VERSION=2.6.5
+
+        - run:
+            name: Build and Start Services
+            command: |
+              docker-compose -f docker-compose.ci.yml up -d --build
+
+        - run:
+            name: Wait for Backend to Be Ready
+            when: always
             command: |
               for i in {1..30}; do
-                if PGPASSWORD=password psql -h postgres -U postgres -d postgres -c '\q' 2>/dev/null; then
-                  echo "PostgreSQL is ready"
+                echo "Trying to hit backend from inside container..."
+                if docker-compose -f docker-compose.ci.yml exec -T backend curl -s http://localhost:3000/api/v1/up | grep 'OK'; then
+                  echo "✅ Backend is ready!"
                   exit 0
                 fi
-                echo "Waiting for PostgreSQL..."
-                sleep 5
-              done
-              echo "PostgreSQL did not become ready in time" && exit 1
-
-        # Setup database
-        - run:
-            name: Setup Database
-            working_directory: backend
-            environment:
-              RAILS_ENV: test
-              POSTGRES_HOST: postgres
-            command: |
-              bin/rails db:create || echo "Database already exists"
-              bin/rails db:migrate
-
-        # Run backend tests
-        - run:
-            name: Run RSpec tests
-            working_directory: backend
-            command: bundle exec rspec --format documentation
-
-    frontend_test:
-      docker:
-        - image: cimg/ruby:3.3
-        - image: cimg/postgres:15.2
-          name: postgres
-          environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: password
-            POSTGRES_DB: backend_test
-            POSTGRES_HOST: postgres
-
-      steps:
-        - checkout
-
-        # Set up Ruby & Gems (for backend)
-        - run:
-            name: Set up Ruby & Install Gems
-            working_directory: backend
-            command: |
-              gem install bundler
-              bundle config set path 'vendor/bundle'
-              bundle install
-
-        # Setup Database
-        - run:
-            name: Setup Database
-            working_directory: backend
-            environment:
-              RAILS_ENV: test
-              POSTGRES_HOST: postgres
-            command: |
-              bin/rails db:create || echo "Database already exists"
-              bin/rails db:migrate
-
-        - run:
-            name: Check Port 3000 Usage
-            command: |
-              netstat -tulnp | grep :3000 || echo "Port 3000 is free"
-
-        # Start Backend
-        - run:
-            working_directory: backend
-            environment:
-              RAILS_ENV: test
-            command: |
-              bin/rails server -b 0.0.0.0 -p 3000 > log/test.log 2>&1 &
-              sleep 5  # Give Rails time to write to the log
-              echo "=== Debugging Rails Logs ==="
-              cat log/test.log || echo "No logs found"
-        
-        # Wait for Backend to Start
-        - run:
-            name: Wait for Backend to be Ready
-            command: |
-              for i in {1..30}; do
-                curl -s http://localhost:3000/health && echo "Backend is ready!" && exit 0
                 echo "Waiting for backend..."
                 sleep 5
               done
-              echo "Backend did not start in time" && exit 1
-        
-        # Log check, if rails crashes
+              echo "❌ Backend failed to start in time"
+              docker-compose -f docker-compose.ci.yml logs backend || echo "No logs found"
+              touch backend_failed
+
         - run:
-            name: Debug Rails Logs
-            working_directory: backend
+            name: Inspect Backend Container
+            when: always
             command: |
-              echo "=== Debugging Rails Logs ==="
-              cat log/test.log || echo "No logs found"
+              docker ps -a
+              echo "------"
+              docker-compose -f docker-compose.ci.yml logs backend || echo "No logs found"
+              echo "------"
+              docker-compose -f docker-compose.ci.yml exec backend ls -lah /app/log || echo "Log dir not found"
 
-        # Debug potential Rails failures
         - run:
-            name: Debug Rails Logs
-            working_directory: backend
-            command: cat log/test.log || echo "No logs found"
+            name: Debug Backend Logs
+            when: always
+            command: docker-compose -f docker-compose.ci.yml logs backend || echo "No logs found"
 
-        # Check if Node.js & npm are available
         - run:
-            name: Check Node & NPM Versions
-            working_directory: frontend
+            name: Tail Rails Test Log
+            when: always
+            command: docker-compose -f docker-compose.ci.yml exec backend sh -c "cat log/test.log || echo 'log/test.log not found'"
+
+        - run:
+            name: Run Backend Tests
+            command: docker-compose -f docker-compose.ci.yml exec backend bundle exec rspec
+
+        - run:
+            name: Run Frontend Tests (Vitest + Playwright)
+            command: docker-compose -f docker-compose.ci.yml exec frontend sh -c "npm run vitest -- --run tests/components && npx playwright test tests/e2e"
+
+        - run:
+            name: Show Rails Logs (if needed)
+            when: always
+            command: docker-compose -f docker-compose.ci.yml logs backend || echo "No logs found"
+
+        - run:
+            name: Fail Job If Backend Died
             command: |
-              node -v
-              npm -v
-
-        # Install Node.js dependencies
-        - run:
-            name: Install Node.js dependencies
-            working_directory: frontend
-            command: npm install
-
-        # Verify vitest is installed
-        - run:
-            name: Verify Vitest Installation
-            working_directory: frontend
-            command: npm list vitest || npm install --save-dev vitest
-
-        # Run Vitest
-        - run:
-            name: Run Vitest
-            working_directory: frontend
-            environment:
-              NODE_ENV: test
-            command: npm run vitest -- --run
-
-        # Run Playwright tests
-        - run:
-            name: Run Playwright tests
-            working_directory: frontend
-            command: npx playwright test
+              if [ -f backend_failed ]; then
+                echo "❌ Backend failed flag detected. Failing job."
+                exit 1
+              fi
 
   workflows:
     build_and_test:
       jobs:
-        - backend_test
-        - frontend_test:
-            requires:
-              - backend_test
+        - test
+  ```
+- create `docker-compose.ci.yml`:
+  ```
+  version: '3.8'
+
+  services:
+    postgres:
+      image: postgres:15
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: backend_test
+      ports:
+        - "5432:5432"
+
+    backend:
+      build:
+        context: .
+        dockerfile: backend/Dockerfile.ci
+      environment:
+        RAILS_ENV: test
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: backend_test
+        POSTGRES_HOST: postgres
+      depends_on:
+        - postgres
+      ports:
+        - "3000:3000"
+      command: >
+        sh -c "bundle exec rails db:prepare && \
+              echo '✅ DB ready' && \
+              bundle exec rails server -b 0.0.0.0 -p 3000"
+              # bundle exec rails server -b 0.0.0.0 -p 3000 || \
+              # (echo '❌ Rails failed to boot, dumping log:' && tail -n 50 log/test.log)"
+
+    frontend:
+      build:
+        context: .
+        dockerfile: frontend/Dockerfile.ci
+      environment:
+        NODE_ENV: test
+        CI: "true"
+        API_BASE: http://backend:3000/api/v1
+      depends_on:
+        - backend
+      ports:
+        - "3001:3000"
+      command: npm run dev
+  ```
+- create `backend/Dockerfile.ci`:
+  ```
+  # backend/Dockerfile.ci
+  # This is only for CircleCI testing, not Fly.io deployment
+  ARG RUBY_VERSION=3.3.0
+  ARG BUNDLER_VERSION=2.6.5
+
+  FROM ruby:${RUBY_VERSION}-slim
+
+  # 👇 Re-declare ARG before setting ENV
+  ARG BUNDLER_VERSION
+  ENV BUNDLER_VERSION=${BUNDLER_VERSION}
+
+  WORKDIR /app
+
+  # Install system dependencies
+  RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    libpq-dev \
+    libvips \
+    curl \
+    git \
+    libjemalloc2 \
+    && rm -rf /var/lib/apt/lists/*
+
+  # Install matching bundler version using ENV (not ARG directly)
+  RUN gem install bundler -v "$BUNDLER_VERSION"
+
+  # Copy over Gemfiles and install dependencies
+  COPY backend/Gemfile backend/Gemfile.lock ./
+  RUN bundle _"$BUNDLER_VERSION"_ install
+
+  # Copy backend app code
+  COPY backend/ .
+  ```
+- create `frontend/Dockerfile.ci`:
+  ```
+  # frontend/Dockerf4ile.ci
+  # This is only for CircleCI testing, not Fly.io deployment
+  FROM node:21.7.1-slim
+
+  WORKDIR /app
+
+  # Install system dependencies for headless testing
+  RUN apt-get update -qq && apt-get install --no-install-recommends -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libxshmfence1 \
+    libxfixes3 \
+    libxrender1 \
+    libxtst6 \
+    libxss1 \
+    xdg-utils \
+    fonts-liberation \
+    libgtk-3-0 \
+    libcurl4 \
+    python-is-python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+  # Install dependencies
+  COPY frontend/package*.json ./
+  RUN npm ci
+
+  # Install dev dependencies for Vitest and Playwright
+  RUN npm install --save-dev @nuxt/test-utils vitest @vue/test-utils happy-dom playwright-core \
+    @playwright/test pixelmatch playwright-expect
+
+  # Copy app source code
+  COPY frontend/ .
+
+  # Install Playwright browser dependencies
+  RUN npx playwright install --with-deps
+
+  # Build Nuxt app
+  RUN npm run build
   ```
 - in `frontend/package.json`, add this to the `scripts` section: `"vitest": "vitest",`
 - in `backend/Gemfile` on line 3, change `ruby "3.3.0"` to `ruby "~> 3.3.0"`
