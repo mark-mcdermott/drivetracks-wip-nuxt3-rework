@@ -516,7 +516,7 @@ AWS details:
 - CI frontend/backend tests should pass 🎉
 
 - **Double Check Local Tests Stil Pass:** 
-- `cd ~/app/backend && rspec`
+- `cd ~/app/backend && rspec` <-- rspec tests should pass locally 🎉
 - `cd ~/app/frontend && vitest tests/components` <-- vitest tests should pass locally 🎉
 - `cd ~/app/backend && rails server`
 - `cd ~/app/frontend && npm run dev`
