@@ -528,6 +528,6 @@ AWS details:
 
 ## Final Thoughts
 
-I hope you've enjoyed this tutorial and gotten everything working. If anything didn't work for you 
+I hope you've enjoyed this tutorial and gotten everything working. If anything didn't work for you, feel free to message me or leave a comment here!
 
 *(End of Tutorial)*
