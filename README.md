@@ -586,6 +586,7 @@ AWS details:
 - `rails db:migrate`
 - Factory for User Model:
   ```
+  mkdir touch spec/factories
   touch spec/factories/users.rb
   ```
 - In spec/factories/users.rb:
