@@ -633,6 +633,11 @@ AWS details:
     namespace :api do
       namespace :v1 do
         get 'up', to: 'health#show'
+        namespace :auth do
+        get 'login', to: 'sessions#create' 
+        get 'signup', to: 'registrations#create'
+        get 'logout', to: 'sessions#destroy'
+      end
       end
     end
   end
@@ -776,6 +781,8 @@ AWS details:
   ```
 - Edit `config/routes.rb` to look like this:
   ```
+- Edit `config/routes.rb` to look like this:
+  ```
   Rails.application.routes.draw do
     devise_for :users, path: '', path_names: {
       sign_in: 'api/v1/auth/login',
@@ -789,8 +796,11 @@ AWS details:
       namespace :v1 do
         get 'up', to: 'health#show'
         namespace :auth do
-          get 'current_user', to: 'current_user#index' # Add this line
-        end
+        get 'login', to: 'sessions#create' 
+        get 'signup', to: 'registrations#create'
+        get 'logout', to: 'sessions#destroy'
+        get 'current_user', to: 'current_user#index'
+      end
       end
     end
   end
