@@ -737,6 +737,15 @@ AWS details:
     end
   end
   ```
+- Add the user serializer:
+  - Create `backend/app/serializers/user_serializer.rb`:
+  ```
+  # app/serializers/user_serializer.rb
+  class UserSerializer
+    include JSONAPI::Serializer
+    attributes :email, :uuid, :admin
+  end
+  ```
 
 **Test**
 - Test the registration with `curl` by sending POST requests with valid user data:
