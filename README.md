@@ -619,16 +619,23 @@ AWS details:
   ```
   rails g devise:controllers api/v1/auth -c sessions registrations
   ```
-- In `config/routes.rb`, add this:
+- Edit `config/routes.rb` to look like this:
   ```
-  devise_for :users, path: '', path_names: {
-    sign_in: 'api/v1/auth/login',
-    sign_out: 'api/v1/auth/logout',
-    registration: 'api/v1/auth/signup'
-  }, controllers: {
-    sessions: 'api/v1/auth/sessions',
-    registrations: 'api/v1/auth/registrations'
-  }
+  Rails.application.routes.draw do
+    devise_for :users, path: '', path_names: {
+      sign_in: 'api/v1/auth/login',
+      sign_out: 'api/v1/auth/logout',
+      registration: 'api/v1/auth/signup'
+    }, controllers: {
+      sessions: 'api/v1/auth/sessions',
+      registrations: 'api/v1/auth/registrations'
+    }
+    namespace :api do
+      namespace :v1 do
+        get 'up', to: 'health#show'
+      end
+    end
+  end
   ```
 
   **Test**
@@ -764,6 +771,27 @@ AWS details:
 
     def index
       render json: UserSerializer.new(current_user).serializable_hash[:data][:attributes], status: :ok
+    end
+  end
+  ```
+- Edit `config/routes.rb` to look like this:
+  ```
+  Rails.application.routes.draw do
+    devise_for :users, path: '', path_names: {
+      sign_in: 'api/v1/auth/login',
+      sign_out: 'api/v1/auth/logout',
+      registration: 'api/v1/auth/signup'
+    }, controllers: {
+      sessions: 'api/v1/auth/sessions',
+      registrations: 'api/v1/auth/registrations'
+    }
+    namespace :api do
+      namespace :v1 do
+        get 'up', to: 'health#show'
+        namespace :auth do
+          get 'current_user', to: 'current_user#index' # Add this line
+        end
+      end
     end
   end
   ```
