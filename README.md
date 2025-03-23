@@ -584,6 +584,9 @@ AWS details:
   t.uuid :uuid, index: { unique: true }
   ```
 - `rails db:migrate`
+- Install Factory Bot:
+  - `bundle add factory_bot_rails --group "development, test"`
+  - `bundle install`
 - Factory for User Model:
   ```
   mkdir touch spec/factories
@@ -606,6 +609,7 @@ AWS details:
 - Test if users can be created:
   ```
   rails console
+  include FactoryBot::Syntax::Methods
   FactoryBot.create(:user)
   ```
 
