@@ -739,7 +739,12 @@ AWS details:
   ```
 
 **Test**
-- Test the registration with `curl` by sending POST requests with valid user data.
+- Test the registration with `curl` by sending POST requests with valid user data:
+  ```
+  curl -X POST http://localhost:3000/api/v1/auth/signup \
+    -H "Content-Type: application/json" \
+    -d '{"user": {"email": "newuser@mail.com", "password": "password"}}'
+  ```
 
 ### 7. **Current User Endpoint**
 - Create Current User Controller:
