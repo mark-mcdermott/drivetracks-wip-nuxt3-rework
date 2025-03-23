@@ -769,7 +769,18 @@ AWS details:
   ```
 
 **Test**
-- Test the current user endpoint by sending a `GET` request with a valid token.
+- Test the current user endpoint by sending a `GET` request with a valid token:
+  - First login and copy the returned token:
+  ```
+  curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"user": {"email": "test@mail.com", "password": "password"}}'
+  ```
+  - Then paste your token in place of the `<your_jwt_token>` here and run this:
+  ```
+  curl -X GET http://localhost:3000/api/v1/auth/current_user \
+  -H "Authorization: Bearer <your_jwt_token>"
+  ```
 
 ### 8. **User Seeds and Production Deployment**
 - User Seeding:
