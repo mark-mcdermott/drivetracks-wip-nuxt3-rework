@@ -707,7 +707,12 @@ AWS details:
   ```
 
 **Test**
-- Test login endpoint with `curl` by posting the user credentials.
+- Test login endpoint with `curl` by posting the user credentials:
+  ```
+  curl -X POST http://localhost:3000/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"user": {"email": "test@mail.com", "password": "password"}}'
+  ```
 
 ### 6. **Registration Controller**
 - Create Registration Controller:
