@@ -684,8 +684,9 @@ AWS details:
 - Check if users have a jti field:
   ```
   rails console
+  user = User.create!(email: 'test@mail.com', password: 'password')
   user = User.find_by(email: "test@mail.com")
-  puts user.jti
+  user.jti
   ```
 
 ### 5. **Session Controller for Login**
