@@ -819,7 +819,20 @@ AWS details:
   ```
 
 **Test**
-- Test seeding in production by running `rails db:seed`.
+- Test seeding:
+  - First reset the database:
+  ```
+  rails db:drop db:create db:migrate
+  ```
+  - Then run the seeds:
+  ```
+  rails db:seed
+  ```
+  - Then check the seeds:
+  ```
+  rails console
+  User.all
+  ```
 
 **Deploy Backend to Fly.io**
 - `cd ~/app/backend`
