@@ -619,7 +619,7 @@ AWS details:
   ```
   rails g devise:controllers api/v1/auth -c sessions registrations
   ```
-- In config/routes.rb:
+- In `config/routes.rb`, add this:
   ```
   devise_for :users, path: '', path_names: {
     sign_in: 'api/v1/auth/login',
