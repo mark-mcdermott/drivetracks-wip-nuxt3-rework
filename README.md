@@ -848,21 +848,205 @@ AWS details:
 - `cd ~/app/backend`
 - `fly deploy`
 
-### 9. Frontend Updates
-- Nuxt Configuration for API Calls:
-  - In nuxt.config.ts, update to use the correct backend URL:
+### 9. Install Sidebase Auth
+- `cd ~/app/frontend`
+- Install Sidebase Auth:
   ```
-  runtimeConfig: { 
-    public: { 
-      apiBase: process.env.API_BASE || '<backend url>/api/v1' 
+  npm install @sidebase/auth
+  ```
+- Update `nuxt.config.ts` for the Sidebase Auth module (and Comet CSS):
+  ```
+  // https://nuxt.com/docs/api/configuration/nuxt-config
+  export default defineNuxtConfig({
+    app: { head: { link: [{ rel: 'stylesheet', href: 'https://npmcdn.com/comet-css@1.2.0/dist/comet.min.css' }]}},
+    devServer: {
+      port: 3001,
+    },
+
+    modules: [
+      '@nuxt/eslint',
+      '@nuxt/fonts',
+      '@nuxt/icon',
+      '@nuxt/image',
+      '@nuxt/test-utils',
+      '@sidebase/nuxt-auth'
+    ],
+
+    auth: {
+      baseURL: 'http://localhost:3000/api/v1/auth',
+      provider: {
+        type: 'local',
+        endpoints: {
+          signIn: { path: 'api/auth/login', method: 'post' },
+          signOut: { path: 'api/auth/logout', method: 'post' },
+          signUp: { path: 'api/auth/register', method: 'post' },
+          getSession: { path: 'api/auth/session', method: 'get' },
+        }
+      }
+    },
+  })
+  ```
+
+10. Add Index/Login/Signup/Private Pages
+- Create `pages/index.vue`
+  ```
+  <template>
+    <div>
+      <h1>Welcome</h1>
+      <blockquote class="blockquote blockquote--highlight">
+        <p>That's good thinking there, Cool Breeze.</p>
+      </blockquote>
+      <p>
+        Cool Breeze is a kid with three or four days' beard
+        sitting next to me on the stamped metal bottom of the
+        open back part of a pickup truck. Bouncing along.
+        Dipping and rising and rolling on these rotten springs
+        like a boat. Out the back of the truck the city of San 
+        Francisco is bouncing down the hill, all those endless
+        staggers of bay windows, slums with a view, bouncing
+        and streaming down the hill. One after another, electric
+        signs with neon martini glasses lit up on them, the San
+        Francisco symbol of "bar"—thousands of neon-magenta
+        martini glasses bouncing and streaming down the hill,
+        and beneath them hundreds, thousands of people
+        wheeling around to look at this freaking crazed truck
+        we're in, their white faces erupting from their lapels
+        like marshmallows—streaming and bouncing down the
+        hill—and God knows they've got plenty to look at.
+        The acid tests are in full swing, and you're about to be part of something <em>truly radical</em>.
+      </p>
+      <NuxtLink class="button" to="/signup">Join the Trip</NuxtLink>
+    </div>
+  </template>
+  ```
+- Create `pages/login.vue`:
+  ```
+  <template>
+    <div>
+      <h1>Login</h1>
+      <form class="form" @submit.prevent="login">
+        <label class="form__label" for="email">Email</label>
+        <input id="email" v-model="email" class="form__input" type="text" placeholder="Your email" >
+
+        <label class="form__label" for="password">Email</label>
+        <input id="password" v-model="password" class="form__input" type="password" placeholder="Your password" >
+
+        <button type="submit" class="button">Log In</button>
+      </form>
+    </div>
+  </template>
+
+  <script setup>
+  import { ref } from 'vue'
+  import { useAuth } from '~/composables/useAuth'
+
+  const email = ref('')
+  const password = ref('')
+  const { loginUser } = useAuth()
+
+  const login = async () => {
+    const result = await loginUser(email.value, password.value)
+    if (result) {
+      navigateTo('/')
+    } else {
+      alert('Login failed')
     }
-  }  
+  }
+  </script>
+  ```
+- Create `pages/signup.vue`:
+  ```
+  <template>
+    <div>
+      <h1>Register</h1>
+      <form class="form" @submit.prevent="register">
+        <label class="form__label" for="email">Email</label>
+        <input id="email" v-model="email" class="form__input" type="text" placeholder="Your email" >
+
+        <label class="form__label" for="password">Email</label>
+        <input id="password" v-model="password" class="form__input" type="password" placeholder="Your password" >
+
+        <button type="submit" class="button">Sign Up</button>
+      </form>
+    </div>
+  </template>
+
+  <script setup>
+  import { ref } from 'vue'
+  import { useAuth } from '~/composables/useAuth'
+
+  const email = ref('')
+  const password = ref('')
+  const { registerUser } = useAuth()
+
+  const register = async () => {
+    const result = await registerUser(email.value, password.value)
+    if (result) {
+      navigateTo('/')
+    } else {
+      alert('Registration failed')
+    }
+  }
+  </script>
+  ```
+- Create `pages/private`:
+  ```
+  <script setup>
+  import { useAuth } from '~/composables/useAuth'
+  import { onBeforeMount } from 'vue'
+  import { useRouter } from 'vue-router'
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+  
+  definePageMeta({
+    middleware: 'sidebase-auth'
+  })
+
+  onBeforeMount(() => {
+    if (isLoading) return
+    if (!user) {
+      router.push('/login')
+    }
+  })
+  </script>
+
+  <template>
+    <div>
+      <h1>Private</h1>
+      <blockquote class="blockquote blockquote--highlight">
+        <p>"Jack&mdash;"</p>
+      </blockquote>
+      <p>
+        And Frenchy hunkers down on the floor and
+        opens the cheese spread and pulls the knife out of the
+        scabbard and sinks the blade into it. Quite a blade! a
+        foot long and engraved with Chinese demons. He wipes
+        gobs of cheese spread onto his tongue with the blade.
+        Sandra sits silent in a clump, grooving on the full life.
+        Jack raps on about perfidy in high places . . .
+      </p>
+      <NuxtLink class="button" to="/signup">Join the Trip</NuxtLink>
+    </div>
+  </template>
+  ```
+- Edit `app.vue` to look like this:
+  ```
+  <template>
+    <div class="container">
+      <HeaderNav />
+      <NuxtPage />
+    </div>
+  </template>
   ```
 
 **Test**
-- Verify that the frontend is correctly calling the backend endpoints and handles JWT authentication.
+- Test out the UI:
+  ```
+  rails s
+  npm run dev
+  ```
 
-### 10. Swagger API Documentation
+### 11. Swagger API Documentation
 - Install Swagger:
   ```
   cd ~/app/backend
