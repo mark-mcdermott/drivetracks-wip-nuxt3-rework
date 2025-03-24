@@ -850,7 +850,7 @@ AWS details:
 - `cd ~/app/frontend`
 - Install Sidebase Auth:
   ```
-  npm install @sidebase/auth
+  npx nuxi module add sidebase-auth
   ```
 - Update `nuxt.config.ts` for the Sidebase Auth module (and Comet CSS):
   ```
