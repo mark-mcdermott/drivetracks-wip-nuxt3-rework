@@ -1025,6 +1025,26 @@ AWS details:
     </div>
   </template>
   ```
+- Create `components/HeaderNav.vue`:
+  ```
+  <script setup>
+  const { status } = useAuth()
+  </script>
+
+  <template>
+    <div>
+      <nav>
+        <ul>
+          <li><NuxtLink to="/"><Icon name="gg:pacman" /></NuxtLink></li>
+          <li><NuxtLink to="/">Home</NuxtLink></li>
+          <li v-if="status === 'authenticated'"><NuxtLink to="/private">Private</NuxtLink></li>
+          <li v-if="status === 'guest'"><NuxtLink to="/login">Login</NuxtLink></li>
+          <li v-if="status === 'guest'"><NuxtLink to="/signup">Register</NuxtLink></li>
+        </ul>
+      </nav>
+    </div>
+  </template>
+  ```
 - Edit `app.vue` to look like this:
   ```
   <template>
