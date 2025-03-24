@@ -936,7 +936,6 @@ AWS details:
 
   <script setup>
   import { ref } from 'vue'
-  import { useAuth } from '~/composables/useAuth'
 
   const email = ref('')
   const password = ref('')
@@ -971,7 +970,6 @@ AWS details:
 
   <script setup>
   import { ref } from 'vue'
-  import { useAuth } from '~/composables/useAuth'
 
   const email = ref('')
   const password = ref('')
