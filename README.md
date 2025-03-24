@@ -1044,6 +1044,27 @@ AWS details:
       </nav>
     </div>
   </template>
+
+  <style scoped>
+  nav {
+    padding: 10px;
+  }
+  ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+  }
+  li {
+    display: inline;
+  }
+  li a {
+    border-bottom: none;
+  }
+  li a:hover {
+    color: #19e2b5;
+    text-decoration: underline;
+  }
+  </style>
   ```
 - Edit `app.vue` to look like this:
   ```
