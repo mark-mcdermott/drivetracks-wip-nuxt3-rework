@@ -781,8 +781,6 @@ AWS details:
   ```
 - Edit `config/routes.rb` to look like this:
   ```
-- Edit `config/routes.rb` to look like this:
-  ```
   Rails.application.routes.draw do
     devise_for :users, path: '', path_names: {
       sign_in: 'api/v1/auth/login',
