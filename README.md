@@ -848,41 +848,55 @@ AWS details:
 
 ### 9. Install Sidebase Auth
 - `cd ~/app/frontend`
-- Install Sidebase Auth:
+- Create `frontend/composables/useAuth.ts`:
   ```
-  npx nuxi module add sidebase-auth
-  ```
-- Update `nuxt.config.ts` for the Sidebase Auth module (and Comet CSS):
-  ```
-  // https://nuxt.com/docs/api/configuration/nuxt-config
-  export default defineNuxtConfig({
-    app: { head: { link: [{ rel: 'stylesheet', href: 'https://npmcdn.com/comet-css@1.2.0/dist/comet.min.css' }]}},
-    devServer: {
-      port: 3001,
-    },
+  import { ref } from 'vue'
 
-    modules: [
-      '@nuxt/eslint',
-      '@nuxt/fonts',
-      '@nuxt/icon',
-      '@nuxt/image',
-      '@nuxt/test-utils',
-      '@sidebase/nuxt-auth'
-    ],
+  const token = ref(localStorage.getItem('token') || null)
+  const user = ref(null)
 
-    auth: {
-      baseURL: 'http://localhost:3000/api/v1/auth',
-      provider: {
-        type: 'local',
-        endpoints: {
-          signIn: { path: 'api/auth/login', method: 'post' },
-          signOut: { path: 'api/auth/logout', method: 'post' },
-          signUp: { path: 'api/auth/register', method: 'post' },
-          getSession: { path: 'api/auth/session', method: 'get' },
-        }
+  export const useAuth = () => {
+    const login = async (email: string, password: string) => {
+      try {
+        const res = await $fetch('/api/v1/auth/login', {
+          method: 'POST',
+          baseURL: useRuntimeConfig().public.apiBase,
+          body: { user: { email, password } },
+        })
+        token.value = res.token
+        localStorage.setItem('token', res.token)
+        return true
+      } catch (err) {
+        console.error('Login failed', err)
+        return false
       }
-    },
-  })
+    }
+
+    const logout = () => {
+      token.value = null
+      user.value = null
+      localStorage.removeItem('token')
+    }
+
+    const fetchCurrentUser = async () => {
+      if (!token.value) return null
+      try {
+        const res = await $fetch('/api/v1/auth/current_user', {
+          method: 'GET',
+          baseURL: useRuntimeConfig().public.apiBase,
+          headers: {
+            Authorization: `Bearer ${token.value}`
+          }
+        })
+        user.value = res
+      } catch (err) {
+        console.error('Failed to fetch current user', err)
+        logout()
+      }
+    }
+
+    return { token, user, login, logout, fetchCurrentUser }
+  }
   ```
 
 10. Add Index/Login/Signup/Private Pages
@@ -936,15 +950,16 @@ AWS details:
 
   <script setup>
   import { ref } from 'vue'
+  import { useAuth } from '~/composables/useAuth'
 
   const email = ref('')
   const password = ref('')
-  const { loginUser } = useAuth()
+  const { login } = useAuth()
 
-  const login = async () => {
-    const result = await loginUser(email.value, password.value)
-    if (result) {
-      navigateTo('/')
+  const onSubmit = async () => {
+    const success = await login(email.value, password.value)
+    if (success) {
+      navigateTo('/private')
     } else {
       alert('Login failed')
     }
@@ -970,17 +985,20 @@ AWS details:
 
   <script setup>
   import { ref } from 'vue'
-
   const email = ref('')
   const password = ref('')
-  const { registerUser } = useAuth()
 
   const register = async () => {
-    const result = await registerUser(email.value, password.value)
-    if (result) {
-      navigateTo('/')
-    } else {
-      alert('Registration failed')
+    try {
+      await $fetch('/api/v1/auth/signup', {
+        method: 'POST',
+        baseURL: useRuntimeConfig().public.apiBase,
+        body: { user: { email: email.value, password: password.value } }
+      })
+      alert('Registration successful')
+      navigateTo('/login')
+    } catch (err) {
+      alert('Signup failed')
     }
   }
   </script>
@@ -1074,6 +1092,15 @@ AWS details:
       <NuxtPage />
     </div>
   </template>
+  ```
+- Create a navigation guard in `frontend/middleware/auth.global.ts`:
+  ```
+  export default defineNuxtRouteMiddleware((to, from) => {
+    const token = localStorage.getItem('token')
+    if (to.path === '/private' && !token) {
+      return navigateTo('/login')
+    }
+  })
   ```
 
 **Test**
