@@ -993,18 +993,26 @@ AWS details:
 
   <script setup>
   import { ref } from 'vue'
+  import { useAuth } from '~/composables/useAuth'
+
   const email = ref('')
   const password = ref('')
+  const { login } = useAuth()
 
   const register = async () => {
     try {
-      await $fetch('/api/v1/auth/signup', {
+      await $fetch('/auth/signup', {
         method: 'POST',
         baseURL: useRuntimeConfig().public.apiBase,
         body: { user: { email: email.value, password: password.value } }
       })
-      alert('Registration successful')
-      navigateTo('/login')
+
+      const success = await login(email.value, password.value)
+      if (success) {
+        navigateTo('/')
+      } else {
+        alert('Registered but login failed 🤷‍♂️')
+      }
     } catch (err) {
       alert('Signup failed')
     }
