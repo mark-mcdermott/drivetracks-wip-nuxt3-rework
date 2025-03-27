@@ -849,7 +849,6 @@ AWS details:
 ### 9. Setup Frontend Auth
 - `cd ~/app/frontend`
 - Create `frontend/composables/useAuth.ts`:
-- Create `frontend/composables/useAuth.ts`:
   ```
   import { ref } from 'vue'
 
