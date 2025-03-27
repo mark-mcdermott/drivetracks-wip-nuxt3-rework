@@ -1201,11 +1201,18 @@ AWS details:
   });
   ```
 
-**Test**
+**Test Locally**
 - Test out the UI:
   ```
-  rails s
-  npm run dev
+  cd backend && rails s
+  cd frontend && npm run dev
+  ```
+
+**Test Prod**
+- redeploy and test
+  ```
+  cd backend && fly deploy
+  cd frontend && fly deploy
   ```
 
 ### 11. Swagger API Documentation
@@ -1234,11 +1241,364 @@ AWS details:
 - Test Local: Ensure all parts are working by testing locally (curl, Postman, etc.).
 - Test on CircleCI: Check CircleCI integration for backend and frontend tests.
 
+## Part III S3 Preparation
+### AWS S3 Setup
+Now we'll create our AWS S3 account so we can store our user avatar images there as well as any other file uploads we'll need. There are a few parts here. We want to create a S3 bucket to store the files. But a S3 bucket needs a IAM user. Both the S3 bucket and the IAM user need permissions policies. There's a little bit of a chicken and egg issue here - when we create the user permissions policy, we need the S3 bucket name. But when we create the S3 bucket permissions, we need the IAM user name. So we'll create everything and use placeholder strings in some of the policies. Then when we're all done, we'll go through the policies and update all the placeholder strings to what they really need to be.
+
+#### AWS General Setup
+- login to AWS (https://aws.amazon.com)
+  - If you don't have an AWS account, you'll need to sign up. It's been awhile since I did this part - I think you have to create a root user and add you credit card or something. Google it if you run into trouble with this part.
+- at top right, select a region if currently says `global` (I use the `us-east-1` region). If all the region options are grayed out, ignore this for now and we'll set it later.
+- at top right click your name
+  - next to Account ID, click the copy icon (two overlapping squares)
+  - paste your Account ID in your `~/app/.secrets` file (It pastes without the dashes. Leave it that way - you need it without the dashes.)
+
+#### AWS User Policy
+- in searchbar at top, enter `iam` and select IAM
+- click `Policies` in the left sidebar under Access Managment
+  - click `Create policy` towards the top right
+  - click the `JSON` tab on Policy Editor
+  - under Policy Editor select all with `command + a` and then hit `delete` to clear out everything there
+  - enter this under Policy Editor (we'll update it shortly, once we have our user and bucket names):
+```
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "AllowGetObject",
+			"Effect": "Allow",
+			 "Action": [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+            ],
+			"Resource": ["arn:aws:s3:::<development bucket name>", "arn:aws:s3:::<production bucket name>"]
+		}
+	]
+}
+```
+  - click Next towards bottom right
+  - for Policy Name, enter `app-s3-user-policy`
+  - paste your policy name in your `.secrets` file
+  - click Create Policy towards the bottom right
+
+#### AWS User
+- click `Users` under Access Management in the left sidebar
+  - click `Create User` towards the top right
+  - enter name, something like `app-s3-user` (add this to your `.secrets` file - you'll need it later)
+  - click Next
+  - under Permissions Options click `Attach policies directly`
+  - in the search bar under Permissions Policies, enter `app-s3-user-policy` -> this should then show the policy we just created above (`app-s3-user-policy`) under Policy Name
+  - under Policy Name, click the checkbox to the left of `app-s3-user-policy`
+  - click Next
+  - click Create User towards the bottom right
+- under Users, click the name of the user we just created (`app-user`)
+  - click Security Credentials tab
+  - click `Create Access key` towards the top right
+    - Use case: `Local code`
+    - check `I understand the above recommendation`
+    - Next
+    - Description tag value: enter tag name, like `app-user-access-key`
+    - click `Create access key` towards the bottom right
+    - paste both the Access Key and the Secret Access Key into your `.secrets` file - this is important!
+    - click Done
+
+#### AWS S3 Bucket
+- in searchbar at top, enter `s3` and select S3
+- Create Bucket
+  - for Bucket Name, enter something like `app-s3-bucket-development` (below when you click Create Bucket, it may tell you this bucket already exists and you will have to make it more unique. Regardless, add this to your `.secrets` file - you'll need it later. Also, make sure it ends in `-development`.)
+  - under Object Ownership, click ACLs Enabled
+  - under Block Public Access settings
+    - uncheck the first option, `Block All Public Access`
+    - check the last two options, `Block public access to buckets and objects granted through new public bucket or access point policies` and `Block public and cross-account access to buckets and objects through any public bucket or access point policies`
+  - check `I acknowledge that the current settings might result in this bucket and the objects within becoming public.`  
+  - scroll to bottom and click Create Bucket (if nothing happens, scroll up and look for red error messages)
+- under General Purpose Buckets, click the name of the bucket you just created -> then click the Permissions tab towards the top
+  - in the Bucket Policy section, click Edit (to the right of "Bucket Policy")
+  - copy/paste the boilerplate json bucket policy in the next line below this into the text editor area under Policy.
+  - here is the boilerplate json bucket policy:
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::<aws acct id without dashes>:user/<iam username>"
+            },
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::<bucket name>"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::<aws acct id without dashes>:user/<iam username>"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+            ],
+            "Resource": "arn:aws:s3:::<bucket name>/*"
+        }
+    ]
+}
+```
+  - Update all the `<aws acct id without dashes>`, `<iam username>` and `<bucket name>` parts in the policy now in the text editor area under Policy with the account number, user name and bucket name you jotted down above in your `~/app/.secrets` file.
+  - click Save Changes towards the bottom right
+  - in the Cross-Origin Resource Sharing (CORS) section, click `Edit` (to the right of "Cross-origin resource sharing (CORS)")
+  - under Cross-origin Resource Sharing (CORS) add this:
+```
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": [],
+        "MaxAgeSeconds": 3000
+    }
+]
+```
+  - click Save Changes towards the bottom right
+- now repeat this entire "AWS S3 Bucket" step above again, but make a production s3 bucket named something like `app-s3-bucket-production` and note the production bucket name in your `.secrets` file
+- now that we know our bucket names, let's update the our user policy with the bucket name
+  - in the searchbar at the top of the page, type `iam` and select `IAM`
+  - click `Policies` in the left sidebar under Access Management
+  - in the searchbar under Policies, type `app-s3-user-policy` -> click `app-s3-user-policy` under Policy Name
+  - click Edit towards the top right
+  - in the Policy Editor text editor area, change the line `"Resource": ["arn:aws:s3:::<development bucket name>", "arn:aws:s3:::<production bucket name>"]` replace `<development bucket name>` and `<production bucket name>` with your development bucket name and production bucket name, respectively, in your `.secrets` file
+  - click Next towards the bottom right
+  - click Save Changes towards the bottom right
+- see what region you're logged into
+  - click the AWS logo in the top left
+  - in the top right there will be a region dropdown - click it
+  - look at the highlighted region in the dropdown and look for the region string to the right of it - something like `us-east-1`
+  - paste your region string in your `~/app/.secrets` file in the `aws region` line
+- we're now done with our S3 setup and our AWS dashboard, at least for now. So let's go back to our terminal where we're building out our rails backend
+
+## IV Setup S3 In Rails/Nuxt
 
 
+### S3 In Rails
+- `cd ~/app/backend`
+- `bundle add aws-sdk-s3`
+- `bundle install`
+- `touch app/controllers/api/v1/uploads_controller.rb`
+- make `~/app/backend/app/controllers/api/v1/uploads_controller.rb` look like this (replacing <your-region> with your aws region and `<your production s3 bucket name>` with your production s3 bucket name from your `.secrets` file):
+```
+class Api::V1::UploadsController < ApplicationController
+  before_action :authenticate_user! # Ensure you have authentication in place
 
+  def presigned_url
+    filename = params[:filename]
+    content_type = params[:content_type]
 
+    s3_client = Aws::S3::Client.new(region: '<your-region>')
+    presigned_url = s3_client.presigned_url(:put_object,
+      bucket: '<your production s3 bucket name>',
+      key: filename,
+      content_type: content_type,
+      acl: 'public-read' # Adjust ACL as needed
+    )
 
+    render json: { url: presigned_url }
+  end
+end
+```
+- add `get 'upload', to: 'uploads#presigned_url'` to `~/app/backend/config/routes.rb` so it looks like this:
+```
+# frozen_string_literal: true
+
+Rails.application.routes.draw do
+  mount Rswag::Ui::Engine => '/api-docs'
+  mount Rswag::Api::Engine => '/api-docs'
+  namespace :api do
+    namespace :v1 do
+      namespace :auth do
+        get 'current_user', to: 'current_user#index'
+        post 'login', to: 'sessions#create'
+        delete 'logout', to: 'sessions#destroy'
+      end
+      resources :users, param: :uuid
+      get 'up', to: 'health#show'
+      get 'upload', to: 'uploads#presigned_url'
+    end
+  end
+  devise_for :users, path: '', path_names: {
+    sign_in: 'api/v1/auth/login',
+    sign_out: 'api/v1/auth/logout',
+    registration: 'api/v1/auth/signup'
+  }, controllers: {
+    sessions: 'api/v1/auth/sessions',
+    registrations: 'api/v1/auth/registrations'
+  }
+end
+```
+
+### Avatars In Rails
+- `cd ~/app/backend`
+- `rails active_storage:install`
+- `rails db:migrate`
+- open your `~/app/.secrets`. You'll need the `access key ID`, `secret access key`, `region` and `bucket` in the next step.
+- `EDITOR="code --wait" rails credentials:edit`
+  - make the file that opens look like this:
+```
+aws:
+  access_key_id: <your aws access key id>
+  secret_access_key: <your aws secret access key>
+  region: <your aws region>
+  bucket: <your s3 production bucket name>
+
+smtp:
+  address: smtp.example.com
+  port: 587
+  domain: example.com
+  user_name: your_smtp_username
+  password: your_smtp_password
+
+# Used as the base secret for all MessageVerifiers in Rails, including the one protecting cookies.
+secret_key_base: <your secret_key_base that was already there. don't touch this>
+```
+- make sure to fill in all the `<...>` sections with the corresponding info from your `.secrets` file and just leave the whole `secret_key_base` as is so don't touch it.
+  - save and close the credentials.yml file
+- in your `~/app/backend/config/storage.yml` file, uncomment the `amazon` section and change the `bucket` line to use your actual s3 bucket name prefix - so if your production s3 bucket is `app-s3-bucket001-production`, the prefix would be `app-s3-bucket001`
+```
+amazon:
+  service: S3
+  access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
+  secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
+  region: <your aws region string>
+  bucket: <your s3 bucket name prefix>-<%= Rails.env %>
+```
+- in `~/app/backend/app/models/user.rb`, add `has_one_attached :avatar` and a `avatar_url` method so it looks like this:
+```
+class User < ApplicationRecord
+  include Devise::JWT::RevocationStrategies::JTIMatcher
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable,
+         :confirmable, :lockable, :timeoutable, :trackable,
+         :jwt_authenticatable, jwt_revocation_strategy: self
+  before_create :set_uuid
+  has_one_attached :avatar
+
+  def avatar_url
+    Rails.application.routes.url_helpers.rails_blob_url(self.avatar, only_path: true) if avatar.attached?
+  end
+
+  private
+
+  def set_uuid
+    self.uuid = SecureRandom.uuid if uuid.blank?
+  end
+end
+```
+- change `~/app/backend/app/serializers/user_serializer.rb` to look like this:
+```
+class UserSerializer
+  include JSONAPI::Serializer
+  attributes :id, :email, :uuid, :avatar_url
+end
+```
+- change `~/app/backend/app/controllers/application_controller.rb` to
+```
+# frozen_string_literal: true
+
+class ApplicationController < ActionController::API
+
+  def serialized_user(user)
+    UserSerializer.new(user).serializable_hash[:data][:attributes].merge(avatar_url: user.avatar.attached? ? url_for(user.avatar) : nil)
+  end
+
+  def serialized_users(users)
+    users.map do |user|
+      serialized_user(user)
+    end
+  end
+end
+```
+- in `~/app/backend/app/controllers/users/users_controller.rb`, we'll 1) add `:avatar` to the permitted, 2) use our serializer for all returned users and 3) set each user's avatar url to a full url path. So the whole file looks like this:
+```
+class Api::V1::UsersController < ApplicationController
+  before_action :set_user, only: %i[ show edit update destroy ]
+
+  # GET /users or /users.json
+  def index
+    @users = User.all
+    render json: serialized_users(@users)
+  end
+
+  # GET /users/1 or /users/1.json
+  def show
+    render json: serialized_user(@user)
+  end
+
+  # GET /users/new
+  def new
+    @user = User.new
+  end
+
+  # GET /users/1/edit
+  def edit
+  end
+
+  # POST /users or /users.json
+  def create
+    @user = User.new(user_params)
+
+    if @user.save
+      render json: serialized_user(@user), status: :created
+    else
+      render json: @user.errors, status: :unprocessable_entity
+    end
+  end
+
+  # PATCH/PUT /users/1 or /users/1.json
+  def update
+    if @user.update(user_params)
+      render json: serialized_user(@user), status: :ok
+    else
+      render json: @user.errors, status: :unprocessable_entity
+    end
+  end
+
+  # DELETE /users/1 or /users/1.json
+  def destroy
+    @user.destroy!
+    head :no_content
+  end
+
+  private
+    # Use callbacks to share common setup or constraints between actions.
+    def set_user
+      @user = User.find_by!(uuid: params[:uuid])
+    end
+
+    # Only allow a list of trusted parameters through.
+    def user_params
+      params.require(:user).permit(:uuid, :email, :avatar, :password)
+    end
+end
+```
+- make `~/app/backend/app/controllers/api/v1/auth/current_user_controller.rb` look like this:
+```
+class Api::V1::Auth::CurrentUserController < ApplicationController
+  before_action :authenticate_user!
+  def index
+    render json: serialized_user(current_user), status: :ok
+  end
+end
+```
+
+### Avatars In Nuxt
 
 
 
