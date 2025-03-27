@@ -944,11 +944,11 @@ AWS details:
   <template>
     <div>
       <h1>Login</h1>
-      <form class="form" @submit.prevent="login">
+      <form class="form" @submit.prevent="onSubmit">
         <label class="form__label" for="email">Email</label>
         <input id="email" v-model="email" class="form__input" type="text" placeholder="Your email" >
 
-        <label class="form__label" for="password">Email</label>
+        <label class="form__label" for="password">Password</label>
         <input id="password" v-model="password" class="form__input" type="password" placeholder="Your password" >
 
         <button type="submit" class="button">Log In</button>
