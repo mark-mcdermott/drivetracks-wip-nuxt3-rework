@@ -850,7 +850,7 @@ AWS details:
 - `cd ~/app/frontend`
 - Create `frontend/composables/useAuth.ts`:
   ```
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
 
   const token = ref(null)
   const user = ref(null)
@@ -899,7 +899,11 @@ AWS details:
       }
     }
 
-    return { token, user, login, logout, fetchCurrentUser }
+    const status = computed(() => {
+      return token.value ? 'authenticated' : 'guest'
+    })
+
+    return { token, user, login, logout, fetchCurrentUser, status }
   }
   ```
 
@@ -1050,7 +1054,7 @@ AWS details:
 - Create `components/HeaderNav.vue`:
   ```
   <script setup>
-  const { status } = useAuth()
+  const { status, logout } = useAuth()
   </script>
 
   <template>
@@ -1062,6 +1066,7 @@ AWS details:
           <li v-if="status === 'authenticated'"><NuxtLink to="/private">Private</NuxtLink></li>
           <li v-if="status === 'guest'"><NuxtLink to="/login">Login</NuxtLink></li>
           <li v-if="status === 'guest'"><NuxtLink to="/signup">Register</NuxtLink></li>
+          <li v-if="status === 'authenticated'"><button @click="logout">Logout</button></li>
         </ul>
       </nav>
     </div>
@@ -1079,12 +1084,20 @@ AWS details:
   li {
     display: inline;
   }
-  li a {
-    border-bottom: none;
+  li a, li button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
   }
-  li a:hover {
+  li a:hover, li button:hover {
     color: #19e2b5;
     text-decoration: underline;
+  }
+  li a span.iconify {
+    vertical-align: middle;
+    font-size: 2rem;
   }
   </style>
   ```
