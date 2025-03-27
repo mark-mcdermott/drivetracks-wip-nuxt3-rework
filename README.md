@@ -846,7 +846,7 @@ AWS details:
 - `cd ~/app/backend`
 - `fly deploy`
 
-### 9. Install Sidebase Auth
+### 9. Setup Frontend Auth
 - `cd ~/app/frontend`
 - Create `frontend/composables/useAuth.ts`:
 - Create `frontend/composables/useAuth.ts`:
