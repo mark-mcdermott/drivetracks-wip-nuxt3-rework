@@ -852,8 +852,12 @@ AWS details:
   ```
   import { ref } from 'vue'
 
-  const token = ref(localStorage.getItem('token') || null)
+  const token = ref(null)
   const user = ref(null)
+
+  if (import.meta.client) {
+    token.value = localStorage.getItem('token')
+  }
 
   export const useAuth = () => {
     const login = async (email: string, password: string) => {
@@ -1095,10 +1099,12 @@ AWS details:
   ```
 - Create a navigation guard in `frontend/middleware/auth.global.ts`:
   ```
-  export default defineNuxtRouteMiddleware((to, from) => {
-    const token = localStorage.getItem('token')
-    if (to.path === '/private' && !token) {
-      return navigateTo('/login')
+  export default defineNuxtRouteMiddleware((to) => {
+    if (import.meta.client) {
+      const token = localStorage.getItem('token')
+      if (to.path === '/private' && !token) {
+        return navigateTo('/login')
+      }
     }
   })
   ```
