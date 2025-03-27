@@ -1035,7 +1035,16 @@ AWS details:
 - Create `components/HeaderNav.vue`:
   ```
   <script setup>
-  const { status, logout } = useAuth()
+  import { useAuth } from '~/composables/useAuth'
+  import { useRouter } from 'vue-router'
+
+  const { logout, status } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = () => {
+    logout()
+    router.push('/')
+  }
   </script>
 
   <template>
@@ -1047,7 +1056,7 @@ AWS details:
           <li v-if="status === 'authenticated'"><NuxtLink to="/private">Private</NuxtLink></li>
           <li v-if="status === 'guest'"><NuxtLink to="/login">Login</NuxtLink></li>
           <li v-if="status === 'guest'"><NuxtLink to="/signup">Register</NuxtLink></li>
-          <li v-if="status === 'authenticated'"><button @click="logout">Logout</button></li>
+          <li v-if="status === 'authenticated'"><button @click="handleLogout">Logout</button></li>
         </ul>
       </nav>
     </div>
