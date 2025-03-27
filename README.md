@@ -1013,25 +1013,6 @@ AWS details:
   ```
 - Create `pages/private.vue`:
   ```
-  <script setup>
-  import { useAuth } from '~/composables/useAuth'
-  import { onBeforeMount } from 'vue'
-  import { useRouter } from 'vue-router'
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  
-  definePageMeta({
-    middleware: 'sidebase-auth'
-  })
-
-  onBeforeMount(() => {
-    if (isLoading) return
-    if (!user) {
-      router.push('/login')
-    }
-  })
-  </script>
-
   <template>
     <div>
       <h1>Private</h1>
