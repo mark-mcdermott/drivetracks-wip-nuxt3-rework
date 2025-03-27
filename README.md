@@ -1246,7 +1246,85 @@ AWS details:
 - Test Local: Ensure all parts are working by testing locally (curl, Postman, etc.).
 - Test on CircleCI: Check CircleCI integration for backend and frontend tests.
 
-## Part III S3 Preparation
+## Part III: Flutter
+
+## Add Flutter With WebViews
+- `cd` into the root folder of our app (`app/`)if you're not there already
+- `flutter create flutter_app`
+- `cd flutter_app`
+- `flutter pub add webview_flutter`
+- Let's modify `flutter_app/lib/main.dart` to load our web app (*And make sure to swap in our `<frontend web url>` towards the bottom*):
+```
+import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: WebViewScreen(),
+    );
+  }
+}
+
+class WebViewScreen extends StatefulWidget {
+  const WebViewScreen({super.key});
+
+  @override
+  State<WebViewScreen> createState() => _WebViewScreenState();
+}
+
+class _WebViewScreenState extends State<WebViewScreen> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse("https://app001-frontend.fly.dev"));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea( 
+        child: WebViewWidget(controller: _controller),
+      ),
+    );
+  }
+}
+```
+- Let's setup an android emulator:
+  - Open android studio
+  - Tools -> Device Manager
+  - Click the "plus" icon to create a new device -> Create Virtual Device
+  - Pick the latest phone that doesn't have the play store icon in the Play column. Right now, that's Pixel 6 Pro -> Next
+  - Click the Additional Settings tab
+  - Scroll down to the bottom where it says Emulated Performance
+  - For graphics acceleration, select Hardware
+  - For RAM enter `4` for GB
+  - Click Finish
+  - Start the emulator you just created in the Device Manager area by clicking the play icon to the right of your new emulator's name
+- Let's setup an iPhone simulator:
+  - Open XCode
+  - XCode -> Open Developer Tool -> Simulator
+  - That should open the iPhone simulator
+- `flutter devices` <- you should see both the android emulator and the iphone simulator listed there (and probably other stuff too).
+  - note the ids of the android emulator and the iphone simulator. The id is the first thing to the right of the device name. For me the android emulator id is `emulator-5554` and the iphone simulator id is `36C6816E-25E8-4669-9505-2A9A2BC9CD47`
+- open two terminal tabs
+  - in the first tab run `flutter run -d <iphone simulator id>`
+  - in the second tab run `flutter run -d <android emulator id>`
+
+## Part IV: S3 Preparation
+
 ### AWS S3 Setup
 Now we'll create our AWS S3 account so we can store our user avatar images there as well as any other file uploads we'll need. There are a few parts here. We want to create a S3 bucket to store the files. But a S3 bucket needs a IAM user. Both the S3 bucket and the IAM user need permissions policies. There's a little bit of a chicken and egg issue here - when we create the user permissions policy, we need the S3 bucket name. But when we create the S3 bucket permissions, we need the IAM user name. So we'll create everything and use placeholder strings in some of the policies. Then when we're all done, we'll go through the policies and update all the placeholder strings to what they really need to be.
 
@@ -1393,8 +1471,7 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
   - paste your region string in your `~/app/.secrets` file in the `aws region` line
 - we're now done with our S3 setup and our AWS dashboard, at least for now. So let's go back to our terminal where we're building out our rails backend
 
-## IV Setup S3 In Rails/Nuxt
-
+## Part V: Setup S3 In Rails/Nuxt
 
 ### S3 In Rails
 - `cd ~/app/backend`
