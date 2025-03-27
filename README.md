@@ -569,7 +569,7 @@ AWS details:
 
 ### 2. **Create User Model with Devise & JWT**
 - `rails g migration EnableUuid`
-- In db/migrate/<timestamp>_enable_uuuid.rb:
+- In `db/migrate/<timestamp>_enable_uuuid.rb`:
   ```
   enable_extension 'pgcrypto'
   ```
