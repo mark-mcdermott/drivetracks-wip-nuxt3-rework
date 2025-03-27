@@ -650,7 +650,7 @@ AWS details:
   ```
 
 ### 4. **JWT Configuration**
-- JWT Setup in devise.rb (initializers/devise.rb):
+- JWT Setup in devise.rb (`initializers/devise.rb`):
   ```
   config.jwt do |jwt|
     jwt.secret = ENV['SECRET_KEY_BASE'] || 'dummy_secret_key_for_tests'
@@ -848,6 +848,7 @@ AWS details:
 
 ### 9. Install Sidebase Auth
 - `cd ~/app/frontend`
+- Create `frontend/composables/useAuth.ts`:
 - Create `frontend/composables/useAuth.ts`:
   ```
   import { ref } from 'vue'
