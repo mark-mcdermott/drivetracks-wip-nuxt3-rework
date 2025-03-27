@@ -862,7 +862,7 @@ AWS details:
   export const useAuth = () => {
     const login = async (email: string, password: string) => {
       try {
-        const res = await $fetch('/api/v1/auth/login', {
+        const res = await $fetch('/auth/login', {
           method: 'POST',
           baseURL: useRuntimeConfig().public.apiBase,
           body: { user: { email, password } },
