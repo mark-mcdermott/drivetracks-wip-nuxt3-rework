@@ -1003,7 +1003,7 @@ AWS details:
   }
   </script>
   ```
-- Create `pages/private`:
+- Create `pages/private.vue`:
   ```
   <script setup>
   import { useAuth } from '~/composables/useAuth'
