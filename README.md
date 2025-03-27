@@ -1161,6 +1161,7 @@ AWS details:
     </div>
   </template>
   ```
+
 - Create a navigation guard in `frontend/middleware/auth.global.ts`:
   ```
   export default defineNuxtRouteMiddleware((to) => {
@@ -1172,6 +1173,7 @@ AWS details:
     }
   })
   ```
+
 - edit your `frontend/nuxt.config.ts` to this:
   ```
   const isCI = process.env.CI === 'true'
@@ -1223,6 +1225,7 @@ AWS details:
   bundle install
   rails g rswag:install
   ```
+
 - Generate swagger for controllers:
   ```
   rails generate rspec:swagger Api::V1::Auth::CurrentUserController
@@ -1230,11 +1233,13 @@ AWS details:
   rails generate rspec:swagger Api::V1::Auth::SessionsController
   rails generate rspec:swagger Api::V1::UsersController
   ```
+
 - Run to generate docs:
   ```
   rake rswag:specs:swaggerize
   rails s
   ```
+
 - In a browser, go to http://localhost:3000/api-docs to view the API docs.
 
 **Test**
@@ -1277,6 +1282,7 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
 	]
 }
 ```
+
   - click Next towards bottom right
   - for Policy Name, enter `app-s3-user-policy`
   - paste your policy name in your `.secrets` file
@@ -1344,6 +1350,7 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
     ]
 }
 ```
+
   - Update all the `<aws acct id without dashes>`, `<iam username>` and `<bucket name>` parts in the policy now in the text editor area under Policy with the account number, user name and bucket name you jotted down above in your `~/app/.secrets` file.
   - click Save Changes towards the bottom right
   - in the Cross-Origin Resource Sharing (CORS) section, click `Edit` (to the right of "Cross-origin resource sharing (CORS)")
@@ -1368,6 +1375,7 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
     }
 ]
 ```
+
   - click Save Changes towards the bottom right
 - now repeat this entire "AWS S3 Bucket" step above again, but make a production s3 bucket named something like `app-s3-bucket-production` and note the production bucket name in your `.secrets` file
 - now that we know our bucket names, let's update the our user policy with the bucket name
