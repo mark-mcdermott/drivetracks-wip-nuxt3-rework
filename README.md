@@ -578,7 +578,7 @@ AWS details:
   ```
   rails generate devise User
   ```
-- In `db/migrate/<timestamp>_devise_create_users.rb`, update:
+- In `db/migrate/<timestamp>_devise_create_users.rb`, add:
   ```
   t.boolean :admin, default: false
   t.uuid :uuid, index: { unique: true }
