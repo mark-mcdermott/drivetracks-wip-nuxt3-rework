@@ -1108,6 +1108,34 @@ AWS details:
     }
   })
   ```
+- edit your `frontend/nuxt.config.ts` to this:
+  ```
+  const isCI = process.env.CI === 'true'
+  const isDev = process.env.NODE_ENV !== 'production'
+
+  export default defineNuxtConfig({
+    app: { head: { link: [{ rel: 'stylesheet', href: 'https://npmcdn.com/comet-css@1.2.0/dist/comet.min.css' }]}},
+    devServer: { port: 3001 },
+
+    modules: [
+      '@nuxt/eslint',
+      '@nuxt/fonts',
+      '@nuxt/icon',
+      '@nuxt/image',
+      '@nuxt/test-utils'
+    ],
+
+    runtimeConfig: {
+      public: {
+        apiBase: isCI
+          ? 'http://backend:3000/api/v1'
+          : isDev
+            ? 'http://localhost:3000/api/v1'
+            : 'https://app001-backend.fly.dev/api/v1'
+      }
+    },
+  });
+  ```
 
 **Test**
 - Test out the UI:
