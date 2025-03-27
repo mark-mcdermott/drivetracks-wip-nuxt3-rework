@@ -1097,7 +1097,7 @@ AWS details:
   }
   li a span.iconify {
     vertical-align: middle;
-    font-size: 2rem;
+    font-size: 2.5rem;
   }
   </style>
   ```
