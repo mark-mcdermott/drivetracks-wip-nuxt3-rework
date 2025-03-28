@@ -706,6 +706,7 @@ AWS details:
   - In `app/controllers/api/v1/auth/sessions_controller.rb`:
   ```
   class Api::V1::Auth::SessionsController < ApplicationController
+    skip_before_action :verify_authenticity_token, only: :create
     def create
       user = User.find_by(email: params[:user][:email])
       if user&.valid_password?(params[:user][:password])
