@@ -1231,6 +1231,38 @@ AWS details:
   rails g rswag:install
   ```
 
+- Set server urls in `backend/spec/swagger_helper.rb`:
+  ```
+  # frozen_string_literal: true
+
+  require 'rails_helper'
+
+  RSpec.configure do |config|
+    config.openapi_root = Rails.root.join('swagger').to_s
+    config.openapi_specs = {
+      'v1/swagger.yaml' => {
+        openapi: '3.0.1',
+        info: {
+          title: 'API V1',
+          version: 'v1'
+        },
+        paths: {},
+        servers: [
+          {
+            url: 'http://localhost:3000',
+            description: 'Local development'
+          },
+          {
+            url: 'https://app001-backend.fly.dev',
+            description: 'Production API server'
+          }
+        ]
+      }
+    }
+    config.openapi_format = :yaml
+  end
+  ```
+
 - Generate swagger for controllers:
   ```
   rails generate rspec:swagger Api::V1::Auth::CurrentUserController
