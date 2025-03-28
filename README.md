@@ -1538,23 +1538,9 @@ end
 ```
 - add `get 'upload', to: 'uploads#presigned_url'` to `~/app/backend/config/routes.rb` so it looks like this:
 ```
-# frozen_string_literal: true
-
 Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
-  namespace :api do
-    namespace :v1 do
-      namespace :auth do
-        get 'current_user', to: 'current_user#index'
-        post 'login', to: 'sessions#create'
-        delete 'logout', to: 'sessions#destroy'
-      end
-      resources :users, param: :uuid
-      get 'up', to: 'health#show'
-      get 'upload', to: 'uploads#presigned_url'
-    end
-  end
   devise_for :users, path: '', path_names: {
     sign_in: 'api/v1/auth/login',
     sign_out: 'api/v1/auth/logout',
@@ -1563,6 +1549,18 @@ Rails.application.routes.draw do
     sessions: 'api/v1/auth/sessions',
     registrations: 'api/v1/auth/registrations'
   }
+  namespace :api do
+    namespace :v1 do
+      get 'up', to: 'health#show'
+      get 'upload', to: 'uploads#presigned_url'
+      namespace :auth do
+      get 'login', to: 'sessions#create' 
+      get 'signup', to: 'registrations#create'
+      get 'logout', to: 'sessions#destroy'
+      get 'current_user', to: 'current_user#index'
+    end
+    end
+  end
 end
 ```
 
