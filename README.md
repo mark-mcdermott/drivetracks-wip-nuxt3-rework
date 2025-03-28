@@ -1246,10 +1246,10 @@ AWS details:
   ```
 
 - In a browser, go to http://localhost:3000/api-docs to view the API docs.
+- `fly deploy`
 
 **Test**
-- Test Local: Ensure all parts are working by testing locally (curl, Postman, etc.).
-- Test on CircleCI: Check CircleCI integration for backend and frontend tests.
+- In a browser, go to https://app001-backend.fly.dev/api-docs to view the API docs.
 
 ## Part III: Flutter
 
