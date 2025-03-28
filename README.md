@@ -867,6 +867,7 @@ AWS details:
         })
         token.value = res.token
         localStorage.setItem('token', res.token)
+        await fetchCurrentUser()
         return true
       } catch (err) {
         console.error('Login failed', err)
@@ -1113,8 +1114,6 @@ AWS details:
       </nav>
     </div>
   </template>
-
-
 
   <style scoped>
   nav {
