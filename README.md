@@ -1045,7 +1045,7 @@ AWS details:
     </div>
   </template>
   ```
-  
+
 - Create `components/HeaderNav.vue`:
   ```
   <script setup>
@@ -1153,7 +1153,7 @@ AWS details:
     font-size: 2.5rem;
   }
   </style>
-```
+  ```
 
 - Edit `app.vue` to look like this:
   ```
