@@ -857,13 +857,6 @@ AWS details:
   const token = ref(null)
   const user = ref(null)
 
-  onMounted(() => {
-    if (localStorage.getItem('token')) {
-      token.value = localStorage.getItem('token')
-      fetchCurrentUser() // <- kick off the fetch on client
-    }
-  })
-
   export const useAuth = () => {
     const login = async (email: string, password: string) => {
       try {
@@ -890,13 +883,14 @@ AWS details:
     const fetchCurrentUser = async () => {
       if (!token.value) return null
       try {
-        const res = await $fetch('/api/v1/auth/current_user', {
-          method: 'GET',
+        console.log('Fetching user...')
+        const res = await $fetch('/auth/current_user', {
           baseURL: useRuntimeConfig().public.apiBase,
           headers: {
             Authorization: `Bearer ${token.value}`
           }
         })
+        console.log('Fetched user:', res)
         user.value = res
       } catch (err) {
         console.error('Failed to fetch current user', err)
@@ -906,6 +900,15 @@ AWS details:
 
     const status = computed(() => {
       return token.value ? 'authenticated' : 'guest'
+    })
+
+    onMounted(() => {
+      const savedToken = localStorage.getItem('token')
+      if (savedToken) {
+        console.log('client token:', savedToken)
+        token.value = savedToken
+        fetchCurrentUser()
+      }
     })
 
     return { token, user, login, logout, fetchCurrentUser, status }
