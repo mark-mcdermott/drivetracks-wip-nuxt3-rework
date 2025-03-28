@@ -1045,6 +1045,7 @@ AWS details:
     </div>
   </template>
   ```
+  
 - Create `components/HeaderNav.vue`:
   ```
   <script setup>
