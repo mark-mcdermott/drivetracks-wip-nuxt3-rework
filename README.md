@@ -1390,7 +1390,8 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
 			 "Action": [
           "s3:PutObject",
           "s3:GetObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:PutObjectAcl"
             ],
 			"Resource": ["arn:aws:s3:::<development bucket name>", "arn:aws:s3:::<production bucket name>"]
 		}
