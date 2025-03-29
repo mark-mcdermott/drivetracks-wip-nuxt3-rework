@@ -1720,6 +1720,103 @@ end
 
 ### Avatars In Nuxt
 
+1. Create AvatarUploader Component
+- Create `frontend/components/AvatarUploader.vue`:
+  ```
+  <script setup>
+  import { ref, watch } from 'vue'
+  import { useAuth } from '~/composables/useAuth'
+
+  const fileInput = ref(null)
+  const selectedFile = ref(null)
+  const uploadProgress = ref(0)
+  const isUploading = ref(false)
+  const { token, user, fetchCurrentUser } = useAuth()
+
+  const uploadAvatar = async () => {
+    if (!selectedFile.value || !token.value) return
+
+    const file = selectedFile.value
+    isUploading.value = true
+
+    // 1. Request presigned URL
+    const { url } = await $fetch('/upload', {
+      baseURL: useRuntimeConfig().public.apiBase,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token.value}` },
+      params: {
+        filename: `avatars/${user.value.uuid}-${file.name}`,
+        content_type: file.type,
+      },
+    })
+
+    // 2. Upload file directly to S3
+    await $fetch(url, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+      onRequestProgress: (event) => {
+        if (event && event.lengthComputable) {
+          uploadProgress.value = Math.round((event.loaded / event.total) * 100)
+        }
+      },
+    })
+
+    // 3. Save avatar filename to backend
+    const avatarUrl = `avatars/${user.value.uuid}-${file.name}`
+    await $fetch(`/users/${user.value.uuid}`, {
+      baseURL: useRuntimeConfig().public.apiBase,
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: {
+        user: {
+          avatar: avatarUrl,
+        },
+      },
+    })
+
+    await fetchCurrentUser()
+    uploadProgress.value = 0
+    isUploading.value = false
+  }
+  </script>
+
+  <template>
+    <div class="avatar-uploader">
+      <input type="file" ref="fileInput" accept="image/*" @change="e => selectedFile.value = e.target.files[0]" />
+      <button class="button" @click="uploadAvatar" :disabled="isUploading">
+        {{ isUploading ? `Uploading... ${uploadProgress}%` : 'Upload Avatar' }}
+      </button>
+      <div v-if="user?.avatar_url">
+        <p>Current Avatar:</p>
+        <img :src="user.avatar_url" alt="avatar" style="max-width: 150px; border-radius: 50%" />
+      </div>
+    </div>
+  </template>
+  ```
+
+2. Use It on the Private Page
+- In `frontend/pages/private.vue`, import and use the component:
+  ```
+  <template>
+    <div>
+      <h1>Private</h1>
+      <p>This is your private zone, Cool Breeze 😎</p>
+      <AvatarUploader />
+    </div>
+  </template>
+
+  <script setup>
+  import AvatarUploader from '~/components/AvatarUploader.vue'
+  </script>
+  ```
+
+3. Permissions Check
+- Make sure your CORS config in AWS S3 allows PUT and that your avatar_url method in Rails returns a publicly accessible URL. If it’s returning a relative path (e.g. /rails/active_storage/...), you can generate a full URL in production by changing this line in user.rb:
 
 
 
