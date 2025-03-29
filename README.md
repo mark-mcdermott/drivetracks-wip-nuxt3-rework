@@ -1390,8 +1390,7 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
 			 "Action": [
           "s3:PutObject",
           "s3:GetObject",
-          "s3:DeleteObject",
-          "s3:PutObjectAcl"
+          "s3:DeleteObject"
             ],
 			"Resource": ["arn:aws:s3:::<development bucket name>", "arn:aws:s3:::<production bucket name>"]
 		}
@@ -1459,7 +1458,8 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
             "Action": [
                 "s3:GetObject",
                 "s3:PutObject",
-                "s3:DeleteObject"
+                "s3:DeleteObject",
+                "s3:PutObjectAcl"
             ],
             "Resource": "arn:aws:s3:::<bucket name>/*"
         }
@@ -1510,6 +1510,32 @@ Now we'll create our AWS S3 account so we can store our user avatar images there
 - we're now done with our S3 setup and our AWS dashboard, at least for now. So let's go back to our terminal where we're building out our rails backend
 
 ## Part V: Setup S3 In Rails/Nuxt
+
+### S3 Manual Avatar Upload
+- If you don’t already have the AWS CLI installed, run
+```
+brew install awscli
+```
+- Then run this to configure the AWS CLI:
+```
+aws configure
+```
+  - when prompted, enter these:
+    - Your Access Key ID
+    - Your Secret Access Key
+    - Default region name: us-east-1 (or whatever you’re using)
+    - Default output format: json
+- Put a test avatar image (`avatar.png`) on your desktop
+- Run this to upload the avatar to your S3:
+```
+aws s3 cp ~/Desktop/avatar.png s3://app001-s3-bucket-production/avatars/avatar.png --acl public-read
+```
+- Double check it uploaded:
+```
+aws s3 ls s3://app001-s3-bucket-production/ --recursive
+```
+
+OLD:
 
 ### S3 In Rails
 - `cd ~/app/backend`
