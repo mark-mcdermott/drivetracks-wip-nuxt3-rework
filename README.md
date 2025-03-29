@@ -1611,7 +1611,9 @@ class User < ApplicationRecord
   has_one_attached :avatar
 
   def avatar_url
-    Rails.application.routes.url_helpers.rails_blob_url(self.avatar, only_path: true) if avatar.attached?
+    if avatar.attached?
+      "https://#{Rails.application.credentials.dig(:aws, :bucket)}.s3.#{Rails.application.credentials.dig(:aws, :region)}.amazonaws.com/#{avatar.key}"
+    end
   end
 
   private
