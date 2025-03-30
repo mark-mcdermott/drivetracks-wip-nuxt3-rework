@@ -1534,6 +1534,138 @@ aws s3 cp ~/Desktop/avatar.png s3://app001-s3-bucket-production/avatars/avatar.p
 ```
 aws s3 ls s3://app001-s3-bucket-production/ --recursive
 ```
+- the url for the image is:
+```
+https://<bucket-name>.s3.<region>.amazonaws.com/avatars/avatar.png
+```
+  - so for me that's:
+  ```
+  https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png
+  ```
+
+### Hardcode avatar url in Nuxt
+- Update `frontend/components/HeaderNav.vue` like this:
+```
+<script setup>
+import { useAuth } from '~/composables/useAuth'
+import { useRouter } from 'vue-router'
+
+const { logout, status, user, fetchCurrentUser } = useAuth()
+const router = useRouter()
+
+onMounted(() => {
+  if (status.value === 'authenticated' && !user.value) {
+    fetchCurrentUser()
+  }
+  console.log('client token:', localStorage.getItem('token'))
+  console.log('auth status:', status.value)
+  console.log('user:', user.value)
+})
+
+const handleLogout = () => {
+  logout()
+  router.push('/')
+}
+
+if (import.meta.client) {
+  watch(user, () => {
+    console.log('🧠 User updated:', user.value)
+  })
+}
+</script>
+
+<template>
+  <div>
+    <nav>
+      <ul>
+        <li><NuxtLink to="/"><Icon class="logo" name="gg:pacman" /></NuxtLink></li>
+        <li><NuxtLink to="/">Home</NuxtLink></li>
+
+        <ClientOnly fallback=" ">
+          <li v-if="status === 'authenticated'">
+            <NuxtLink to="/private">Private</NuxtLink>
+          </li>
+          <li v-if="status === 'guest'">
+            <NuxtLink to="/login">Login</NuxtLink>
+          </li>
+          <li v-if="status === 'guest'">
+            <NuxtLink to="/signup">Register</NuxtLink>
+          </li>
+          <li v-if="status === 'authenticated'">
+            <button @click="handleLogout">Logout</button>
+          </li>
+        </ClientOnly>
+      </ul>
+
+      <ClientOnly fallback=" ">
+        <div v-if="status === 'authenticated' && user?.email" class="user-info">
+          <img
+            src="https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png"
+            alt="User avatar"
+            class="avatar"
+          />
+          <span><strong>{{ user.email }}</strong></span>
+        </div>
+        <div v-else>
+          No users logged in
+        </div>
+      </ClientOnly>
+    </nav>
+  </div>
+</template>
+
+<style scoped>
+nav {
+  padding: 10px 10px 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  position: relative;
+  bottom: 3px;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #19e2b5;
+}
+ul {
+  list-style: none;
+  display: flex;
+  padding-inline-start: 0;
+  gap: 20px;
+}
+li {
+  display: inline;
+}
+li a, li button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+li a:hover, li button:hover {
+  color: #19e2b5;
+  text-decoration: underline;
+}
+li a span.iconify {
+  vertical-align: middle;
+  font-size: 2.5rem;
+}
+</style>
+```
+
 
 OLD:
 
