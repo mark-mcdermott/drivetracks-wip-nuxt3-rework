@@ -1357,6 +1357,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
   - note the ids of the android emulator and the iphone simulator. The id is the first thing to the right of the device name. For me the android emulator id is `emulator-5554` and the iphone simulator id is `36C6816E-25E8-4669-9505-2A9A2BC9CD47`
 - open two terminal tabs
   - in the first tab run `flutter run -d <iphone simulator id>`
+    - this takes a few minutes
+    - mid-run, this may print an error which can be ignored: "the following plugin(s) depend on a different Android NDK..."
   - in the second tab run `flutter run -d <android emulator id>`
 
 ## Part IV: S3 Preparation
