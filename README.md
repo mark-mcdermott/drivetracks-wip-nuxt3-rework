@@ -1546,82 +1546,19 @@ https://<bucket-name>.s3.<region>.amazonaws.com/avatars/avatar.png
   ```
 
 ### Hardcode avatar url in Nuxt
-- Update `frontend/components/HeaderNav.vue` like this:
+- Update the `<ClientOnly>` part of `frontend/components/HeaderNav.vue` to this:
 ```
-<script setup>
-import { useAuth } from '~/composables/useAuth'
-import { useRouter } from 'vue-router'
-
-const { logout, status, user, fetchCurrentUser } = useAuth()
-const router = useRouter()
-
-onMounted(() => {
-  if (status.value === 'authenticated' && !user.value) {
-    fetchCurrentUser()
-  }
-  console.log('client token:', localStorage.getItem('token'))
-  console.log('auth status:', status.value)
-  console.log('user:', user.value)
-})
-
-const handleLogout = () => {
-  logout()
-  router.push('/')
-}
-
-if (import.meta.client) {
-  watch(user, () => {
-    console.log('🧠 User updated:', user.value)
-  })
-}
-</script>
-
-<template>
-  <div>
-    <nav>
-      <ul>
-        <li><NuxtLink to="/"><Icon class="logo" name="gg:pacman" /></NuxtLink></li>
-        <li><NuxtLink to="/">Home</NuxtLink></li>
-
-        <ClientOnly fallback=" ">
-          <li v-if="status === 'authenticated'">
-            <NuxtLink to="/private">Private</NuxtLink>
-          </li>
-          <li v-if="status === 'guest'">
-            <NuxtLink to="/login">Login</NuxtLink>
-          </li>
-          <li v-if="status === 'guest'">
-            <NuxtLink to="/signup">Register</NuxtLink>
-          </li>
-          <li v-if="status === 'authenticated'">
-            <button @click="handleLogout">Logout</button>
-          </li>
-        </ClientOnly>
-      </ul>
-
-      <ClientOnly fallback=" ">
-        <div v-if="status === 'authenticated' && user?.email" class="user-email">
-          User logged in: <img src="https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png" ><strong>{{ user.email }}</strong>
-        </div>
-        <div v-else>
-          No users logged in
-        </div>
-      </ClientOnly>
-    </nav>
+<ClientOnly fallback=" ">
+  <div v-if="status === 'authenticated' && user?.email" class="user-email">
+    User logged in: <img src="https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png" ><strong>{{ user.email }}</strong>
   </div>
-</template>
-
-<style scoped>
-nav {
-  padding: 10px 10px 10px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.logo {
-  position: relative;
-  bottom: 3px;
-}
+  <div v-else>
+    No users logged in
+  </div>
+</ClientOnly>
+```
+- And update the `.user-email` part of the css in `frontend/components/HeaderNav.vue` to this:
+```
 .user-email {
   margin-left: auto;
   white-space: nowrap;
@@ -1634,32 +1571,18 @@ nav {
     margin: 0 8px;
   }
 }
-ul {
-  list-style: none;
-  display: flex;
-  padding-inline-start: 0;
-  gap: 20px;
-}
-li {
-  display: inline;
-}
-li a, li button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-li a:hover, li button:hover {
-  color: #19e2b5;
-  text-decoration: underline;
-}
-li a span.iconify {
-  vertical-align: middle;
-  font-size: 2.5rem;
-}
-</style>
 ```
+- Test it out locally:
+```
+cd backend && rails s
+cd frontend && npm run dev
+```
+- Then redeploy and test on prod:
+```
+cd frontend && fly deploy`
+```
+
+### Pull avatar url from backend to frontend
 
 - Let's add an avatar url string column to our user model on the backend:
   - `cd backend`
