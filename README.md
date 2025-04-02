@@ -590,7 +590,7 @@ ENV['POSTGRES_HOST'] ||= 'postgres'
   - `bundle install`
 - Factory for User Model:
   ```
-  mkdir touch spec/factories
+  mkdir spec/factories
   touch spec/factories/users.rb
   ```
 - In spec/factories/users.rb:
