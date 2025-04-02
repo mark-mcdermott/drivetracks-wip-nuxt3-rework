@@ -1342,7 +1342,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   - Open android studio
   - Tools -> Device Manager
   - Click the "plus" icon to create a new device -> Create Virtual Device
-  - Pick the latest phone that doesn't have the play store icon in the Play column. Right now, that's Pixel 6 Pro -> Next
+  - Pick the Pixel XL API 33 -> Next
   - Click the Additional Settings tab
   - Scroll down to the bottom where it says Emulated Performance
   - For graphics acceleration, select Hardware
