@@ -1630,6 +1630,9 @@ cd frontend && npm run dev
 - Redeploy:
 - `cd ~/app/backend && fly deploy`
 - `cd ~/app/frontend && fly deploy`
+- `fly console`
+- `user = User.find(1)`
+- `user.update!(avatar: "https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png")`
 - Then test it out in prod
 
 
