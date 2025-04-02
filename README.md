@@ -1548,319 +1548,163 @@ https://<bucket-name>.s3.<region>.amazonaws.com/avatars/avatar.png
 ### Hardcode avatar url in Nuxt
 - Update `frontend/components/HeaderNav.vue` like this:
 ```
+<script setup>
+import { useAuth } from '~/composables/useAuth'
+import { useRouter } from 'vue-router'
 
+const { logout, status, user, fetchCurrentUser } = useAuth()
+const router = useRouter()
 
-OLD:
-
-### S3 In Rails
-- `cd ~/app/backend`
-- `bundle add aws-sdk-s3`
-- `bundle install`
-- `touch app/controllers/api/v1/uploads_controller.rb`
-- make `~/app/backend/app/controllers/api/v1/uploads_controller.rb` look like this (replacing <your-region> with your aws region and `<your production s3 bucket name>` with your production s3 bucket name from your `.secrets` file):
-```
-class Api::V1::UploadsController < ApplicationController
-  before_action :authenticate_user! # Ensure you have authentication in place
-
-  def presigned_url
-    filename = params[:filename]
-    content_type = params[:content_type]
-
-    s3_client = Aws::S3::Client.new(region: '<your-region>')
-    presigned_url = s3_client.presigned_url(:put_object,
-      bucket: '<your production s3 bucket name>',
-      key: filename,
-      content_type: content_type,
-      acl: 'public-read' # Adjust ACL as needed
-    )
-
-    render json: { url: presigned_url }
-  end
-end
-```
-- add `get 'upload', to: 'uploads#presigned_url'` to `~/app/backend/config/routes.rb` so it looks like this:
-```
-Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => '/api-docs'
-  mount Rswag::Api::Engine => '/api-docs'
-  devise_for :users, path: '', path_names: {
-    sign_in: 'api/v1/auth/login',
-    sign_out: 'api/v1/auth/logout',
-    registration: 'api/v1/auth/signup'
-  }, controllers: {
-    sessions: 'api/v1/auth/sessions',
-    registrations: 'api/v1/auth/registrations'
+onMounted(() => {
+  if (status.value === 'authenticated' && !user.value) {
+    fetchCurrentUser()
   }
-  namespace :api do
-    namespace :v1 do
-      get 'up', to: 'health#show'
-      get 'upload', to: 'uploads#presigned_url'
-      namespace :auth do
-      get 'login', to: 'sessions#create' 
-      get 'signup', to: 'registrations#create'
-      get 'logout', to: 'sessions#destroy'
-      get 'current_user', to: 'current_user#index'
-    end
-    end
-  end
-end
+  console.log('client token:', localStorage.getItem('token'))
+  console.log('auth status:', status.value)
+  console.log('user:', user.value)
+})
+
+const handleLogout = () => {
+  logout()
+  router.push('/')
+}
+
+if (import.meta.client) {
+  watch(user, () => {
+    console.log('🧠 User updated:', user.value)
+  })
+}
+</script>
+
+<template>
+  <div>
+    <nav>
+      <ul>
+        <li><NuxtLink to="/"><Icon class="logo" name="gg:pacman" /></NuxtLink></li>
+        <li><NuxtLink to="/">Home</NuxtLink></li>
+
+        <ClientOnly fallback=" ">
+          <li v-if="status === 'authenticated'">
+            <NuxtLink to="/private">Private</NuxtLink>
+          </li>
+          <li v-if="status === 'guest'">
+            <NuxtLink to="/login">Login</NuxtLink>
+          </li>
+          <li v-if="status === 'guest'">
+            <NuxtLink to="/signup">Register</NuxtLink>
+          </li>
+          <li v-if="status === 'authenticated'">
+            <button @click="handleLogout">Logout</button>
+          </li>
+        </ClientOnly>
+      </ul>
+
+      <ClientOnly fallback=" ">
+        <div v-if="status === 'authenticated' && user?.email" class="user-email">
+          User logged in: <img src="https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png" ><strong>{{ user.email }}</strong>
+        </div>
+        <div v-else>
+          No users logged in
+        </div>
+      </ClientOnly>
+    </nav>
+  </div>
+</template>
+
+<style scoped>
+nav {
+  padding: 10px 10px 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  position: relative;
+  bottom: 3px;
+}
+.user-email {
+  margin-left: auto;
+  white-space: nowrap;
+
+  img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin: 0 8px;
+  }
+}
+ul {
+  list-style: none;
+  display: flex;
+  padding-inline-start: 0;
+  gap: 20px;
+}
+li {
+  display: inline;
+}
+li a, li button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+li a:hover, li button:hover {
+  color: #19e2b5;
+  text-decoration: underline;
+}
+li a span.iconify {
+  vertical-align: middle;
+  font-size: 2.5rem;
+}
+</style>
 ```
 
-### Avatars In Rails
-- `cd ~/app/backend`
-- `rails active_storage:install`
-- `rails db:migrate`
-- open your `~/app/.secrets`. You'll need the `access key ID`, `secret access key`, `region` and `bucket` in the next step.
-- `EDITOR="code --wait" rails credentials:edit`
-  - make the file that opens look like this:
-```
-aws:
-  access_key_id: <your aws access key id>
-  secret_access_key: <your aws secret access key>
-  region: <your aws region>
-  bucket: <your s3 production bucket name>
-
-smtp:
-  address: smtp.example.com
-  port: 587
-  domain: example.com
-  user_name: your_smtp_username
-  password: your_smtp_password
-
-# Used as the base secret for all MessageVerifiers in Rails, including the one protecting cookies.
-secret_key_base: <your secret_key_base that was already there. don't touch this>
-```
-- make sure to fill in all the `<...>` sections with the corresponding info from your `.secrets` file and just leave the whole `secret_key_base` as is so don't touch it.
-  - save and close the credentials.yml file
-- in your `~/app/backend/config/storage.yml` file, uncomment the `amazon` section and change the `bucket` line to use your actual s3 bucket name prefix - so if your production s3 bucket is `app-s3-bucket001-production`, the prefix would be `app-s3-bucket001`
-```
-amazon:
-  service: S3
-  access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
-  secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
-  region: <your aws region string>
-  bucket: <your s3 bucket name prefix>-<%= Rails.env %>
-```
-- in `~/app/backend/app/models/user.rb`, add `has_one_attached :avatar` and a `avatar_url` method so it looks like this:
-```
-class User < ApplicationRecord
-  include Devise::JWT::RevocationStrategies::JTIMatcher
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable,
-         :confirmable, :lockable, :timeoutable, :trackable,
-         :jwt_authenticatable, jwt_revocation_strategy: self
-  before_create :set_uuid
-  has_one_attached :avatar
-
-  def avatar_url
-    if avatar.attached?
-      "https://#{Rails.application.credentials.dig(:aws, :bucket)}.s3.#{Rails.application.credentials.dig(:aws, :region)}.amazonaws.com/#{avatar.key}"
-    end
-  end
-
-  private
-
-  def set_uuid
-    self.uuid = SecureRandom.uuid if uuid.blank?
-  end
-end
-```
-- change `~/app/backend/app/serializers/user_serializer.rb` to look like this:
+- Let's add an avatar url string column to our user model on the backend:
+  - `cd backend`
+  - `rails g migration AddAvatarToUsers avatar:string`
+  - `rails db:migrate`
+- Let's add our avatar url string to our user in rails console:
+  - `rails console`
+  - `user = User.find_by(email: 'test@mail.com')`
+  - `user.update!(avatar: 'https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png')`
+- Update `app/serializers/user_serializer.rb` to include the avatar url:
 ```
 class UserSerializer
   include JSONAPI::Serializer
-  attributes :id, :email, :uuid, :avatar_url
+  attributes :email, :uuid, :admin, :avatar
 end
 ```
-- change `~/app/backend/app/controllers/application_controller.rb` to
+- Update `app/controllers/api/v1/auth/current_user_controller.rb` to include the avatar url:
 ```
-# frozen_string_literal: true
-
-class ApplicationController < ActionController::API
-
-  def serialized_user(user)
-    UserSerializer.new(user).serializable_hash[:data][:attributes].merge(avatar_url: user.avatar.attached? ? url_for(user.avatar) : nil)
-  end
-
-  def serialized_users(users)
-    users.map do |user|
-      serialized_user(user)
-    end
-  end
+def index
+  render json: UserSerializer.new(current_user).serializable_hash[:data][:attributes]
 end
 ```
-- in `~/app/backend/app/controllers/users/users_controller.rb`, we'll 1) add `:avatar` to the permitted, 2) use our serializer for all returned users and 3) set each user's avatar url to a full url path. So the whole file looks like this:
+- Now let's the `ClientOnly` part of `frontend/components/HeaderNav.vue` to:
 ```
-class Api::V1::UsersController < ApplicationController
-  before_action :set_user, only: %i[ show edit update destroy ]
-
-  # GET /users or /users.json
-  def index
-    @users = User.all
-    render json: serialized_users(@users)
-  end
-
-  # GET /users/1 or /users/1.json
-  def show
-    render json: serialized_user(@user)
-  end
-
-  # GET /users/new
-  def new
-    @user = User.new
-  end
-
-  # GET /users/1/edit
-  def edit
-  end
-
-  # POST /users or /users.json
-  def create
-    @user = User.new(user_params)
-
-    if @user.save
-      render json: serialized_user(@user), status: :created
-    else
-      render json: @user.errors, status: :unprocessable_entity
-    end
-  end
-
-  # PATCH/PUT /users/1 or /users/1.json
-  def update
-    if @user.update(user_params)
-      render json: serialized_user(@user), status: :ok
-    else
-      render json: @user.errors, status: :unprocessable_entity
-    end
-  end
-
-  # DELETE /users/1 or /users/1.json
-  def destroy
-    @user.destroy!
-    head :no_content
-  end
-
-  private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_user
-      @user = User.find_by!(uuid: params[:uuid])
-    end
-
-    # Only allow a list of trusted parameters through.
-    def user_params
-      params.require(:user).permit(:uuid, :email, :avatar, :password)
-    end
-end
-```
-- make `~/app/backend/app/controllers/api/v1/auth/current_user_controller.rb` look like this:
-```
-class Api::V1::Auth::CurrentUserController < ApplicationController
-  before_action :authenticate_user!
-  def index
-    render json: serialized_user(current_user), status: :ok
-  end
-end
+<ClientOnly fallback=" ">
+  <div v-if="status === 'authenticated' && user?.email" class="user-email">
+    User logged in: <img v-if="user?.avatar" :src="user.avatar" ><strong>{{ user.email }}</strong>
+  </div>
+  <div v-else>
+    No users logged in
+  </div>
+</ClientOnly>
 ```
 
-### Avatars In Nuxt
+- Test it out locally:
+```
+cd backend && rails s
+cd frontend && npm run dev
+```
+- Redeploy:
+- `cd ~/app/backend && fly deploy`
+- `cd ~/app/frontend && fly deploy`
+- Then test it out in prod
 
-1. Create AvatarUploader Component
-- Create `frontend/components/AvatarUploader.vue`:
-  ```
-  <script setup>
-  import { ref, watch } from 'vue'
-  import { useAuth } from '~/composables/useAuth'
 
-  const fileInput = ref(null)
-  const selectedFile = ref(null)
-  const uploadProgress = ref(0)
-  const isUploading = ref(false)
-  const { token, user, fetchCurrentUser } = useAuth()
-
-  const uploadAvatar = async () => {
-    if (!selectedFile.value || !token.value) return
-
-    const file = selectedFile.value
-    isUploading.value = true
-
-    // 1. Request presigned URL
-    const { url } = await $fetch('/upload', {
-      baseURL: useRuntimeConfig().public.apiBase,
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token.value}` },
-      params: {
-        filename: `avatars/${user.value.uuid}-${file.name}`,
-        content_type: file.type,
-      },
-    })
-
-    // 2. Upload file directly to S3
-    await $fetch(url, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-      },
-      onRequestProgress: (event) => {
-        if (event && event.lengthComputable) {
-          uploadProgress.value = Math.round((event.loaded / event.total) * 100)
-        }
-      },
-    })
-
-    // 3. Save avatar filename to backend
-    const avatarUrl = `avatars/${user.value.uuid}-${file.name}`
-    await $fetch(`/users/${user.value.uuid}`, {
-      baseURL: useRuntimeConfig().public.apiBase,
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
-      body: {
-        user: {
-          avatar: avatarUrl,
-        },
-      },
-    })
-
-    await fetchCurrentUser()
-    uploadProgress.value = 0
-    isUploading.value = false
-  }
-  </script>
-
-  <template>
-    <div class="avatar-uploader">
-      <input type="file" ref="fileInput" accept="image/*" @change="e => selectedFile.value = e.target.files[0]" />
-      <button class="button" @click="uploadAvatar" :disabled="isUploading">
-        {{ isUploading ? `Uploading... ${uploadProgress}%` : 'Upload Avatar' }}
-      </button>
-      <div v-if="user?.avatar_url">
-        <p>Current Avatar:</p>
-        <img :src="user.avatar_url" alt="avatar" style="max-width: 150px; border-radius: 50%" />
-      </div>
-    </div>
-  </template>
-  ```
-
-2. Use It on the Private Page
-- In `frontend/pages/private.vue`, import and use the component:
-  ```
-  <template>
-    <div>
-      <h1>Private</h1>
-      <p>This is your private zone, Cool Breeze 😎</p>
-      <AvatarUploader />
-    </div>
-  </template>
-
-  <script setup>
-  import AvatarUploader from '~/components/AvatarUploader.vue'
-  </script>
-  ```
-
-3. Permissions Check
-- Make sure your CORS config in AWS S3 allows PUT and that your avatar_url method in Rails returns a publicly accessible URL. If it’s returning a relative path (e.g. /rails/active_storage/...), you can generate a full URL in production by changing this line in user.rb:
 
 
 
