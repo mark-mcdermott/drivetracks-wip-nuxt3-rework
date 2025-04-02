@@ -1579,7 +1579,7 @@ cd frontend && npm run dev
 ```
 - Then redeploy and test on prod:
 ```
-cd frontend && fly deploy`
+cd frontend && fly deploy
 ```
 
 ### Pull avatar url from backend to frontend
