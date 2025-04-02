@@ -1588,10 +1588,11 @@ cd frontend && fly deploy
   - `cd backend`
   - `rails g migration AddAvatarToUsers avatar:string`
   - `rails db:migrate`
-- Let's add our avatar url string to our user in rails console:
-  - `rails console`
-  - `user = User.find_by(email: 'test@mail.com')`
-  - `user.update!(avatar: 'https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png')`
+- Let's update our `backend/db/seeds.db`:
+```
+User.create!(email: 'test@mail.com', password: 'password', avatar: 'https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png', admin: true)
+User.create!(email: 'test2@mail.com', password: 'password')
+```
 - Update `app/serializers/user_serializer.rb` to include the avatar url:
 ```
 class UserSerializer
@@ -1622,6 +1623,7 @@ end
 
 - Test it out locally:
 ```
+cd backend && rails db:drop db:create db:migrate db:seed
 cd backend && rails s
 cd frontend && npm run dev
 ```
