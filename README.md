@@ -1360,6 +1360,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     - this takes a few minutes
     - mid-run, this may print an error which can be ignored: "the following plugin(s) depend on a different Android NDK..."
   - in the second tab run `flutter run -d <android emulator id>`
+    - this takes a few minutes
 
 ## Part IV: S3 Preparation
 
