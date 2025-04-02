@@ -2,7 +2,7 @@
 
 ## Overview
 
-In this tutorial, you'll build a lean Rails API (backend) and a Nuxt 3 app (frontend), both hosted on fly.io. There will be RSpec, Vitest and Playwright tests, which will run locally and on CircleCI.
+In this tutorial, you'll build a lean Rails API (backend) and a Nuxt 3 app (frontend), both hosted on fly.io. There will be RSpec, Vitest and Playwright tests, which will run locally and on CircleCI. Avatars will be hosted on S3.
 
 ## Part I: Barebones App With CircleCI Tests On Fly.io
 
