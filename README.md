@@ -1601,8 +1601,11 @@ end
 ```
 - Update `app/controllers/api/v1/auth/current_user_controller.rb` to include the avatar url:
 ```
-def index
-  render json: UserSerializer.new(current_user).serializable_hash[:data][:attributes]
+class Api::V1::Auth::CurrentUserController < ApplicationController
+  before_action :authenticate_user!
+  def index
+    render json: UserSerializer.new(current_user).serializable_hash[:data][:attributes]
+  end
 end
 ```
 - Now let's the `ClientOnly` part of `frontend/components/HeaderNav.vue` to:
