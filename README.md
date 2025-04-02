@@ -668,7 +668,7 @@ ENV['POSTGRES_HOST'] ||= 'postgres'
   ```
   rails g migration addJtiToUsers jti:string:index:unique
   ```
-- In `db/migrate/<timestamp>_add_jti_to_users.rb`:
+- In `db/migrate/<timestamp>_add_jti_to_users.rb` replace the `add_column` and `add_index` lines with this:
   ```
   add_column :users, :jti, :string, null: false
   add_index :users, :jti, unique: true
