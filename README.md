@@ -1635,7 +1635,62 @@ cd frontend && npm run dev
 - `user.update!(avatar: "https://app001-s3-bucket-production.s3.us-east-1.amazonaws.com/avatars/avatar.png")`
 - Then test it out in prod
 
+## Part VI: Add Tailwind
 
+- First let's install Tailwind:
+```
+cd ~/app/frontend
+npm install tailwindcss @tailwindcss/vite
+```
+- create an `assets/css/main.css`:
+```
+@import "tailwindcss";
+```
+- in `nuxt.config.ts`:
+  - first remove the whole `app: { head: { link: [{ rel: 'stylesheet', href: 'https://npmcdn.com/comet-css@1.2.0/dist/comet.min.css' }]}},` line
+  - then add this instead:
+  ```
+  css: ['~/assets/css/main.css'],
+  vite: { plugins: [tailwindcss()] },
+  ```
+- Update `frontend/components/HeaderNav.vue` to look like this:
+```
+<template>
+  <div>
+    <nav class="flex items-center justify-between px-4 py-2">
+      <ul class="flex gap-4 list-none">
+        <li><NuxtLink to="/"><Icon name="gg:pacman" class="text-3xl" /></NuxtLink></li>
+        <li><NuxtLink to="/">Home</NuxtLink></li>
+
+        <ClientOnly fallback=" ">
+          <li v-if="status === 'authenticated'">
+            <NuxtLink to="/private">Private</NuxtLink>
+          </li>
+          <li v-if="status === 'guest'">
+            <NuxtLink to="/login">Login</NuxtLink>
+          </li>
+          <li v-if="status === 'guest'">
+            <NuxtLink to="/signup">Register</NuxtLink>
+          </li>
+          <li v-if="status === 'authenticated'">
+            <button @click="handleLogout">Logout</button>
+          </li>
+        </ClientOnly>
+      </ul>
+
+      <ClientOnly fallback=" ">
+        <div v-if="status === 'authenticated' && user?.email" class="flex items-center gap-2 ml-auto whitespace-nowrap">
+          <img v-if="user?.avatar" :src="user.avatar" class="w-8 h-8 rounded-full" >
+          <strong>{{ user.email }}</strong>
+        </div>
+        <div v-else>
+          No users logged in
+        </div>
+      </ClientOnly>
+    </nav>
+  </div>
+</template>
+```
 
 
 
