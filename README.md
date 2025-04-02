@@ -732,7 +732,6 @@ ENV['POSTGRES_HOST'] ||= 'postgres'
   - In `app/controllers/api/v1/auth/registrations_controller.rb`:
   ```
   class Api::V1::Auth::RegistrationsController < Devise::RegistrationsController
-    skip_before_action :verify_authenticity_token, only: :create
     respond_to :json
 
     def create
