@@ -505,6 +505,7 @@ ENV['POSTGRES_HOST'] ||= 'postgres'
     },
   });
   ```
+- `cd ~/app`
 - `echo ".DS_Store\n.secrets\n.env" > .gitignore`
 - `git init`
 - `git add .`
